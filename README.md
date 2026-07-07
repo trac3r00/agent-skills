@@ -1,6 +1,6 @@
 # agent-skills
 
-Three production-tested [Agent Skills](https://agentskills.io) for people running **real, long-lived AI agents** — the kind that accrete context, assert things without evidence, and talk across surfaces that don't share a brain. All three ship as small, dependency-light Python tools you can run standalone, drop into CI, or load as a skill in Claude Code, Codex, OpenCode, and any agent that follows the open [Agent Skills standard](https://agentskills.io/specification).
+Runnable [Agent Skills](https://agentskills.io) for people running **real, long-lived AI agents** — and for people who just want their own recurring costs audited. The agent skills tackle the messes agents make: they accrete context, assert things without evidence, and talk across surfaces that don't share a brain. The everyday skills tackle the messes *humans* let slide — like a subscription stack nobody re-reads. All ship as small, dependency-light Python tools you can run standalone, drop into CI, or load as a skill in Claude Code, Codex, OpenCode, and any agent that follows the open [Agent Skills standard](https://agentskills.io/specification).
 
 Most skill directories are full of prompt wrappers. These are **runnable tools that return an exit code** — they hold a line, not just a vibe.
 
@@ -9,6 +9,7 @@ Most skill directories are full of prompt wrappers. These are **runnable tools t
 | [`context-budget`](skills/context-budget) | Audits an agent's per-turn context window like a cost center — ranks what actually eats tokens (system prompt, skills, memory, tool schemas, gate code) and **fails CI when the agent gets fatter**. | Everyone talks about "context engineering"; almost nobody gives you a ruler with a budget you can enforce. |
 | [`claim-audit`](skills/claim-audit) | A linter for AI answers: separates **grounded / hedged / bare** factual claims and surfaces the unverified hard assertions most likely to be hallucinations. Gates a reply before it ships. | Fact-checkers are heavy and online; this is an offline, instant triage of *which* claims to verify. |
 | [`open-loops`](skills/open-loops) | Extracts the **unresolved commitments, deferrals, decisions, and open questions** from a thread into a JSON ledger — so a cron job or fresh session picks them up instead of dropping them. | The conversation surface and the scheduled surface never share memory; this is the missing handoff between them. |
+| [`subscription-audit`](skills/subscription-audit) | Finds the **recurring charges hiding in a bank/card CSV** — clusters repeat payments by merchant and cadence, reports the true monthly and yearly cost, and flags the **forgotten** ones (stale, or a free trial that started charging) worth cancelling. | Every "find my subscriptions" product wants a bank login; this reads a CSV you already have, fully offline, and returns an exit code you can put on a monthly cron. |
 
 ## Quick start
 
@@ -28,6 +29,9 @@ echo "The capital of Australia is Sydney. See https://example.com for details." 
 # 3) What did the thread leave open for a later job to pick up?
 printf '[me] charge the car tonight\n[bot] set the charge later\n' \
   | python skills/open-loops/scripts/open_loops.py -
+
+# 4) Which subscriptions am I paying for on repeat?
+python skills/subscription-audit/scripts/subscription_audit.py statement.csv --budget 80
 ```
 
 `context-budget` uses `tiktoken` when available and falls back to a calibrated
@@ -66,9 +70,9 @@ codex plugin marketplace add trac3r00/agent-skills
 codex plugin add agent-guards@agent-guards
 ```
 
-All three skills (`context-budget`, `claim-audit`, `open-loops`) load together as
-the `agent-guards` plugin. In Claude Code the plugin reports its own always-on
-token cost (~460 tokens) via `claude plugin details agent-guards` — the same
+All four skills (`context-budget`, `claim-audit`, `open-loops`, `subscription-audit`)
+load together as the `agent-guards` plugin. In Claude Code the plugin reports its own
+always-on token cost via `claude plugin details agent-guards` — the same
 context-budget discipline the skills enforce, applied to themselves.
 
 ## Or load as a plain Agent Skill
