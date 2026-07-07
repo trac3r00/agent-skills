@@ -1,0 +1,20 @@
+{
+  "name": "agent-guards",
+  "description": "Runnable guard skills for long-lived AI agents — token budget audits, hallucination triage, and cross-surface open-loop tracking. Each skill returns an exit code you can enforce in CI or a pre-commit hook.",
+  "version": "1.0.0",
+  "author": {
+    "name": "trac3r00"
+  },
+  "homepage": "https://github.com/trac3r00/agent-skills",
+  "license": "MIT",
+  "keywords": [
+    "context-budget",
+    "claim-audit",
+    "open-loops",
+    "context-engineering",
+    "hallucination",
+    "agent-memory",
+    "ci-gate",
+    "token-budget"
+  ]
+}

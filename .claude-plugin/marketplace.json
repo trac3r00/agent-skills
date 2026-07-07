@@ -1,0 +1,29 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "agent-guards",
+  "description": "Runnable guard skills for long-lived AI agents — token budget audits, hallucination triage, and cross-surface open-loop tracking. Every skill returns an exit code you can enforce in CI.",
+  "owner": {
+    "name": "trac3r00"
+  },
+  "plugins": [
+    {
+      "name": "agent-guards",
+      "description": "Three production-tested guard skills for autonomous agents: context-budget (audit per-turn token cost, fail CI when the agent gets fatter), claim-audit (separate grounded/hedged/bare factual claims to catch likely hallucinations), and open-loops (extract unresolved commitments, deferrals, and open questions from a transcript so cron/triggers don't lose thread context). Dependency-light Python, exit-code gates, not prompt wrappers.",
+      "version": "1.0.0",
+      "author": {
+        "name": "trac3r00"
+      },
+      "source": "./",
+      "category": "productivity",
+      "homepage": "https://github.com/trac3r00/agent-skills",
+      "tags": [
+        "context-engineering",
+        "token-budget",
+        "hallucination",
+        "agent-memory",
+        "ci-gate"
+      ]
+    }
+  ],
+  "version": "1.0.0"
+}

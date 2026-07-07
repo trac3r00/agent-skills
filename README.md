@@ -52,10 +52,29 @@ straight into a pre-commit hook or GitHub Actions:
 "The agent got fatter" and "the answer is mostly unsupported assertions" now fail
 the build instead of silently costing money or shipping hallucinations.
 
-## Load as an Agent Skill
+## Install straight into Claude Code or Codex
 
-Each skill folder is a valid Agent Skill (`SKILL.md` + `scripts/`). Point your
-agent's skills directory at `skills/`, or copy a folder into `~/.claude/skills/`,
+This repo ships as a **plugin marketplace** for both agents — one line, no manual copying:
+
+```bash
+# Claude Code
+claude plugin marketplace add trac3r00/agent-skills
+claude plugin install agent-guards@agent-guards
+
+# Codex
+codex plugin marketplace add trac3r00/agent-skills
+codex plugin add agent-guards@agent-guards
+```
+
+All three skills (`context-budget`, `claim-audit`, `open-loops`) load together as
+the `agent-guards` plugin. In Claude Code the plugin reports its own always-on
+token cost (~460 tokens) via `claude plugin details agent-guards` — the same
+context-budget discipline the skills enforce, applied to themselves.
+
+## Or load as a plain Agent Skill
+
+Each skill folder is also a standalone Agent Skill (`SKILL.md` + `scripts/`). Point
+your agent's skills directory at `skills/`, or copy a folder into `~/.claude/skills/`,
 `~/.codex/skills/`, or your Hermes `skills/` dir.
 
 ## Design notes
