@@ -1,6 +1,6 @@
 # agent-skills
 
-Two production-tested [Agent Skills](https://agentskills.io) for people running **real, long-lived AI agents** — the kind that accrete context and assert things without evidence. Both ship as small, dependency-light Python tools you can run standalone, drop into CI, or load as a skill in Claude Code, Codex, OpenCode, and any agent that follows the open [Agent Skills standard](https://agentskills.io/specification).
+Three production-tested [Agent Skills](https://agentskills.io) for people running **real, long-lived AI agents** — the kind that accrete context, assert things without evidence, and talk across surfaces that don't share a brain. All three ship as small, dependency-light Python tools you can run standalone, drop into CI, or load as a skill in Claude Code, Codex, OpenCode, and any agent that follows the open [Agent Skills standard](https://agentskills.io/specification).
 
 Most skill directories are full of prompt wrappers. These are **runnable tools that return an exit code** — they hold a line, not just a vibe.
 
@@ -8,6 +8,7 @@ Most skill directories are full of prompt wrappers. These are **runnable tools t
 |-------|--------------|---------------|
 | [`context-budget`](skills/context-budget) | Audits an agent's per-turn context window like a cost center — ranks what actually eats tokens (system prompt, skills, memory, tool schemas, gate code) and **fails CI when the agent gets fatter**. | Everyone talks about "context engineering"; almost nobody gives you a ruler with a budget you can enforce. |
 | [`claim-audit`](skills/claim-audit) | A linter for AI answers: separates **grounded / hedged / bare** factual claims and surfaces the unverified hard assertions most likely to be hallucinations. Gates a reply before it ships. | Fact-checkers are heavy and online; this is an offline, instant triage of *which* claims to verify. |
+| [`open-loops`](skills/open-loops) | Extracts the **unresolved commitments, deferrals, decisions, and open questions** from a thread into a JSON ledger — so a cron job or fresh session picks them up instead of dropping them. | The conversation surface and the scheduled surface never share memory; this is the missing handoff between them. |
 
 ## Quick start
 
@@ -23,11 +24,15 @@ python skills/context-budget/scripts/context_budget.py \
 # 2) Which claims in this answer are unsupported?
 echo "The capital of Australia is Sydney. See https://example.com for details." \
   | python skills/claim-audit/scripts/claim_audit.py -
+
+# 3) What did the thread leave open for a later job to pick up?
+printf '[me] charge the car tonight\n[bot] set the charge later\n' \
+  | python skills/open-loops/scripts/open_loops.py -
 ```
 
 `context-budget` uses `tiktoken` when available and falls back to a calibrated
 `chars/4` estimate otherwise, so it never hard-fails on a fresh box. `claim-audit`
-is pure standard library — zero dependencies.
+and `open-loops` are pure standard library — zero dependencies.
 
 ## Use them in CI
 
@@ -40,6 +45,8 @@ straight into a pre-commit hook or GitHub Actions:
   run: python skills/context-budget/scripts/context_budget.py PATHS --budget 40000
 - name: Claim audit on golden answers
   run: python skills/claim-audit/scripts/claim_audit.py answers/*.txt --fail-over 0.4
+- name: Open-loop handoff hygiene
+  run: python skills/open-loops/scripts/open_loops.py thread.jsonl --max-open 8
 ```
 
 "The agent got fatter" and "the answer is mostly unsupported assertions" now fail
