@@ -1,7 +1,7 @@
 {
   "name": "agent-guards",
-  "version": "1.0.0",
-  "description": "Runnable guard skills for long-lived AI agents — token budget audits, hallucination triage, and cross-surface open-loop tracking. Each skill returns an exit code you can enforce in CI.",
+  "version": "1.1.0",
+  "description": "Runnable skills that return an exit code you can enforce — token budget audits, hallucination triage, cross-surface open-loop tracking, and a personal subscription auditor that finds recurring charges in a bank/card CSV.",
   "author": {
     "name": "trac3r00",
     "url": "https://github.com/trac3r00"
@@ -13,17 +13,19 @@
     "context-budget",
     "claim-audit",
     "open-loops",
+    "subscription-audit",
     "context-engineering",
     "hallucination",
     "agent-memory",
+    "personal-finance",
     "ci-gate",
     "token-budget"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Agent Guards",
-    "shortDescription": "Token, hallucination, and open-loop guards for autonomous agents",
-    "longDescription": "Three production-tested guard skills for long-lived AI agents. context-budget audits an agent's per-turn context window like a cost center and fails CI when the always-loaded context grows. claim-audit separates grounded, hedged, and bare factual claims so you catch the unverified assertions most likely to be hallucinations. open-loops extracts unresolved commitments, deferrals, and open questions from a transcript so cron jobs and triggers don't lose thread context. Dependency-light Python, exit-code gates — not prompt wrappers.",
+    "shortDescription": "Exit-code skills: token, hallucination, open-loop, and subscription audits",
+    "longDescription": "Runnable skills for people running real AI agents — and their own budget. context-budget audits an agent's per-turn context window like a cost center and fails CI when the always-loaded context grows. claim-audit separates grounded, hedged, and bare factual claims so you catch the unverified assertions most likely to be hallucinations. open-loops extracts unresolved commitments, deferrals, and open questions from a transcript so cron jobs and triggers don't lose thread context. subscription-audit finds the recurring charges hiding in a bank/card CSV, reports the true monthly and yearly cost, and flags the forgotten ones worth cancelling. Dependency-light Python, exit-code gates — not prompt wrappers.",
     "developerName": "trac3r00",
     "category": "Productivity",
     "capabilities": [
@@ -33,7 +35,8 @@
     "defaultPrompt": [
       "Audit my agent's context budget",
       "Which claims in this answer are unsupported?",
-      "Find open loops in this conversation"
+      "Find open loops in this conversation",
+      "Which subscriptions am I paying for on repeat?"
     ],
     "brandColor": "#16A34A"
   }
