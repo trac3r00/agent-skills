@@ -10,6 +10,7 @@ CA = ROOT / "skills" / "claim-audit" / "scripts" / "claim_audit.py"
 OL = ROOT / "skills" / "open-loops" / "scripts" / "open_loops.py"
 SA = ROOT / "skills" / "subscription-audit" / "scripts" / "subscription_audit.py"
 GG = ROOT / "skills" / "gate-graph" / "scripts" / "gate_graph.py"
+SD = ROOT / "skills" / "skill-decay" / "scripts" / "skill_decay.py"
 
 
 def run(script, *args, stdin=None):
@@ -274,4 +275,97 @@ def test_gate_graph_exit_over_overlap(tmp_path):
 
 def test_gate_graph_missing_dir_is_error(tmp_path):
     rc, _, _ = run(GG, str(tmp_path / "nope"))
+    assert rc == 2
+
+
+# ── skill-decay ────────────────────────────────────────────────────────────
+def _make_skill_layer(tmp_path):
+    """Three skills: one used a lot, one used long ago (stale), one never used."""
+    for name in ("plan", "codex", "godmode"):
+        d = tmp_path / name
+        d.mkdir()
+        (d / "SKILL.md").write_text(
+            f"---\nname: {name}\ndescription: test skill {name}\n---\n# {name}\n"
+        )
+    return tmp_path
+
+
+def test_skill_decay_classifies_never_stale_live(tmp_path):
+    skills = _make_skill_layer(tmp_path)
+    log = tmp_path / "agent.log"
+    # plan used recently (live), codex used long ago (stale), godmode never
+    log.write_text(
+        "2026-07-06 loaded plan and ran plan again\n"
+        "2026-07-07 plan finished\n"
+        "2026-01-01 codex delegated a task\n"
+    )
+    rc, out, _ = run(
+        SD, "--skills-dir", str(skills), "--logs", str(log),
+        "--stale-days", "30", "--as-of", "2026-07-07", "--json",
+    )
+    assert rc == 0
+    import json
+    data = json.loads(out)
+    verdict = {i["name"]: i["decay"] for i in data["items"]}
+    assert verdict["plan"] == "live"
+    assert verdict["codex"] == "stale"
+    assert verdict["godmode"] == "never"
+    assert data["counts"]["decay_candidates"] == 2
+
+
+def test_skill_decay_whole_word_match_no_substring(tmp_path):
+    d = tmp_path / "plan"
+    d.mkdir()
+    (d / "SKILL.md").write_text("---\nname: plan\n---\n# plan\n")
+    log = tmp_path / "l.log"
+    # "planet" and "planner" must NOT count as a hit for "plan"
+    log.write_text("2026-07-07 the planet has a planner\n")
+    rc, out, _ = run(SD, "--skills-dir", str(d.parent), "--logs", str(log), "--json")
+    import json
+    data = json.loads(out)
+    assert data["items"][0]["count"] == 0
+    assert data["items"][0]["decay"] == "never"
+
+
+def test_skill_decay_names_mode_and_stdin(tmp_path):
+    rc, out, _ = run(
+        SD, "--names", "alpha,beta,gamma", "--stdin",
+        stdin="alpha ran here\nalpha again\nbeta once\n",
+    )
+    # gamma never used → default text report, exit 0 (no gate set)
+    assert rc == 0
+    assert "gamma" in out
+    assert "never" in out
+
+
+def test_skill_decay_max_decay_gate(tmp_path):
+    skills = _make_skill_layer(tmp_path)
+    log = tmp_path / "a.log"
+    log.write_text("2026-07-07 plan only\n")  # codex + godmode never used
+    rc_over, _, _ = run(
+        SD, "--skills-dir", str(skills), "--logs", str(log),
+        "--as-of", "2026-07-07", "--max-decay", "1",
+    )
+    rc_ok, _, _ = run(
+        SD, "--skills-dir", str(skills), "--logs", str(log),
+        "--as-of", "2026-07-07", "--max-decay", "10",
+    )
+    assert rc_over == 1
+    assert rc_ok == 0
+
+
+def test_skill_decay_fail_on_never(tmp_path):
+    skills = _make_skill_layer(tmp_path)
+    log = tmp_path / "a.log"
+    log.write_text("2026-07-07 plan codex both used\n")  # godmode never
+    rc, out, _ = run(
+        SD, "--skills-dir", str(skills), "--logs", str(log),
+        "--as-of", "2026-07-07", "--fail-on-never",
+    )
+    assert rc == 1
+    assert "godmode" in out
+
+
+def test_skill_decay_empty_inventory_is_error(tmp_path):
+    rc, _, err = run(SD, "--skills-dir", str(tmp_path), "--stdin", stdin="whatever\n")
     assert rc == 2
