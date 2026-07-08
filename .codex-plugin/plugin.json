@@ -1,7 +1,7 @@
 {
   "name": "agent-guards",
-  "version": "1.2.0",
-  "description": "Runnable skills that return an exit code you can enforce — token budget audits, hallucination triage, cross-surface open-loop tracking, subscription cleanup, and gate overlap analysis.",
+  "version": "1.3.0",
+  "description": "Runnable skills that return an exit code you can enforce — token budget audits, hallucination triage, cross-surface open-loop tracking, subscription cleanup, gate overlap analysis, and skill-decay usage audits.",
   "author": {
     "name": "trac3r00",
     "url": "https://github.com/trac3r00"
@@ -15,6 +15,7 @@
     "open-loops",
     "subscription-audit",
     "gate-graph",
+    "skill-decay",
     "context-engineering",
     "hallucination",
     "agent-memory",
@@ -27,7 +28,7 @@
   "interface": {
     "displayName": "Agent Guards",
     "shortDescription": "Exit-code skills: token, hallucination, open-loop, subscription, and gate overlap audits",
-    "longDescription": "Runnable skills for people running real AI agents — and their own budget. context-budget audits an agent's per-turn context window like a cost center and fails CI when the always-loaded context grows. claim-audit separates grounded, hedged, and bare factual claims so you catch the unverified assertions most likely to be hallucinations. open-loops extracts unresolved commitments, deferrals, and open questions from a transcript so cron jobs and triggers don't lose thread context. subscription-audit finds recurring charges hiding in a bank/card CSV, reports the true monthly and yearly cost, and flags forgotten ones. gate-graph computes AST overlap for validator and middleware gates so duplicate checks and dead gates can be cleaned up quickly. Dependency-light Python, exit-code gates — not prompt wrappers.",
+    "longDescription": "Runnable skills for people running real AI agents — and their own budget. context-budget audits an agent's per-turn context window like a cost center and fails CI when the always-loaded context grows. claim-audit separates grounded, hedged, and bare factual claims so you catch the unverified assertions most likely to be hallucinations. open-loops extracts unresolved commitments, deferrals, and open questions from a transcript so cron jobs and triggers don't lose thread context. subscription-audit finds recurring charges hiding in a bank/card CSV, reports the true monthly and yearly cost, and flags forgotten ones. gate-graph computes AST overlap for validator and middleware gates so duplicate checks and dead gates can be cleaned up quickly. skill-decay cross-references a declared skill/tool inventory against real usage logs to surface never-used and stale capabilities that are quietly taxing every prompt. Dependency-light Python, exit-code gates — not prompt wrappers.",
     "developerName": "trac3r00",
     "category": "Productivity",
     "capabilities": [
@@ -39,7 +40,8 @@
       "Which claims in this answer are unsupported?",
       "Find open loops in this conversation",
       "Which subscriptions am I paying for on repeat?",
-      "Show gate overlap and dead gates in my validator layer"
+      "Show gate overlap and dead gates in my validator layer",
+      "Which of my skills are declared but never actually used?"
     ],
     "brandColor": "#16A34A"
   }
