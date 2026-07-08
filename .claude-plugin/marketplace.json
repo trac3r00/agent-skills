@@ -1,14 +1,14 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "agent-guards",
-  "description": "Runnable skills that return an exit code you can enforce — token budget audits, hallucination triage, cross-surface open-loop tracking, and a personal subscription auditor. Real tools, not prompt wrappers.",
+  "description": "Runnable skills that return an exit code you can enforce — token budget audits, hallucination triage, cross-surface open-loop tracking, subscription cleanup, and gate maintenance. Real tools, not prompt wrappers.",
   "owner": {
     "name": "trac3r00"
   },
   "plugins": [
     {
       "name": "agent-guards",
-      "description": "Four runnable skills that hold a line with an exit code: context-budget (audit per-turn token cost, fail CI when the agent gets fatter), claim-audit (separate grounded/hedged/bare factual claims to catch likely hallucinations), open-loops (extract unresolved commitments, deferrals, and open questions from a transcript so cron/triggers don't lose thread context), and subscription-audit (find the recurring charges hiding in a bank/card CSV, report true monthly/yearly cost, flag the forgotten ones worth cancelling). Dependency-light Python, exit-code gates, not prompt wrappers.",
+      "description": "Five runnable skills that hold a line with an exit code: context-budget (audit per-turn token cost, fail CI when the agent gets fatter), claim-audit (separate grounded/hedged/bare factual claims to catch likely hallucinations), open-loops (extract unresolved commitments, deferrals, and open questions from a transcript so cron/triggers don't lose thread context), subscription-audit (find the recurring charges hiding in a bank/card CSV, report true monthly/yearly cost, flag the forgotten ones worth cancelling), and gate-graph (AST overlap analysis for validator/middleware gates to detect duplicate checks and dead modules). Dependency-light Python, exit-code gates, not prompt wrappers.",
       "version": "1.1.0",
       "author": {
         "name": "trac3r00"
@@ -22,7 +22,8 @@
         "hallucination",
         "agent-memory",
         "personal-finance",
-        "ci-gate"
+        "ci-gate",
+        "gate-graph"
       ]
     }
   ],
