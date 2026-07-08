@@ -10,6 +10,7 @@ Most skill directories are full of prompt wrappers. These are **runnable tools t
 | [`claim-audit`](skills/claim-audit) | A linter for AI answers: separates **grounded / hedged / bare** factual claims and surfaces the unverified hard assertions most likely to be hallucinations. Gates a reply before it ships. | Fact-checkers are heavy and online; this is an offline, instant triage of *which* claims to verify. |
 | [`open-loops`](skills/open-loops) | Extracts the **unresolved commitments, deferrals, decisions, and open questions** from a thread into a JSON ledger — so a cron job or fresh session picks them up instead of dropping them. | The conversation surface and the scheduled surface never share memory; this is the missing handoff between them. |
 | [`subscription-audit`](skills/subscription-audit) | Finds the **recurring charges hiding in a bank/card CSV** — clusters repeat payments by merchant and cadence, reports the true monthly and yearly cost, and flags the **forgotten** ones (stale, or a free trial that started charging) worth cancelling. | Every "find my subscriptions" product wants a bank login; this reads a CSV you already have, fully offline, and returns an exit code you can put on a monthly cron. |
+| [`gate-graph`](skills/gate-graph) | Builds an AST overlap matrix for validator/middleware gate modules, flags duplicate checks and dead gates, and fails CI when overlap or count thresholds are exceeded. | Gate layers grow quietly; this keeps validator stacks from becoming bloated without a measurable signal. |
 
 ## Quick start
 
@@ -32,11 +33,14 @@ printf '[me] charge the car tonight\n[bot] set the charge later\n' \
 
 # 4) Which subscriptions am I paying for on repeat?
 python skills/subscription-audit/scripts/subscription_audit.py statement.csv --budget 80
+
+# 5) Which validator gates are duplicate, orphaned, or over threshold?
+python skills/gate-graph/scripts/gate_graph.py ./skills --max-gates 49 --max-overlap 0.5 --json
 ```
 
 `context-budget` uses `tiktoken` when available and falls back to a calibrated
-`chars/4` estimate otherwise, so it never hard-fails on a fresh box. `claim-audit`
-and `open-loops` are pure standard library — zero dependencies.
+`chars/4` estimate otherwise, so it never hard-fails on a fresh box. `claim-audit`,
+`open-loops`, and `gate-graph` are pure standard library — zero dependencies.
 
 ## Use them in CI
 
@@ -51,6 +55,8 @@ straight into a pre-commit hook or GitHub Actions:
   run: python skills/claim-audit/scripts/claim_audit.py answers/*.txt --fail-over 0.4
 - name: Open-loop handoff hygiene
   run: python skills/open-loops/scripts/open_loops.py thread.jsonl --max-open 8
+- name: Gate overlap hygiene
+  run: python skills/gate-graph/scripts/gate_graph.py ./skills --max-gates 49 --max-overlap 0.5
 ```
 
 "The agent got fatter" and "the answer is mostly unsupported assertions" now fail
@@ -70,7 +76,7 @@ codex plugin marketplace add trac3r00/agent-skills
 codex plugin add agent-guards@agent-guards
 ```
 
-All four skills (`context-budget`, `claim-audit`, `open-loops`, `subscription-audit`)
+All five skills (`context-budget`, `claim-audit`, `open-loops`, `subscription-audit`, `gate-graph`)
 load together as the `agent-guards` plugin. In Claude Code the plugin reports its own
 always-on token cost via `claude plugin details agent-guards` — the same
 context-budget discipline the skills enforce, applied to themselves.
@@ -83,12 +89,12 @@ your agent's skills directory at `skills/`, or copy a folder into `~/.claude/ski
 
 ## Design notes
 
-Both tools came out of running a production autonomous agent whose gate layer
+`context-budget`, `claim-audit`, and `gate-graph` came out of running a production autonomous agent whose gate layer
 grew to **214,588 tokens across 83 files** — a single quality gate eating 10.7% of
 the window on every request. `context-budget` is the instrument that made that
-visible; `claim-audit` is the reflex that keeps its answers honest. The heuristics
-are deliberately simple and transparent — you can read the whole thing in one sitting
-and trust what it flags.
+visible; `claim-audit` is the reflex that keeps its answers honest; `gate-graph` is
+the maintenance lens for duplicate and orphaned guards. The heuristics are deliberately
+simple and transparent — you can read the whole thing in one sitting and trust what it flags.
 
 ## License
 
