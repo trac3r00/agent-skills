@@ -201,6 +201,14 @@ def jaccard(left: frozenset[str], right: frozenset[str]) -> float:
 def build_matrix(
     gates: list[GateProfile]
 ) -> tuple[list[list[float]], list[dict[str, object]]]:
+    """Return the full similarity matrix plus a LIGHTWEIGHT pair list.
+
+    The pair list carries only ``left``/``right``/``overlap`` — no per-pair
+    fingerprint diffs. Dumping the shared/left_only/right_only sets for every
+    one of the O(n^2) pairs is exactly the token-bloat this tool exists to
+    catch, so the heavy diff is computed lazily (see ``enrich_pair``) and only
+    for the handful of pairs that actually breach the overlap threshold.
+    """
     size = len(gates)
     matrix = [[0.0 for _ in range(size)] for _ in range(size)]
     overlap_pairs: list[dict[str, object]] = []
@@ -214,12 +222,26 @@ def build_matrix(
                     "left": gates[i].name,
                     "right": gates[j].name,
                     "overlap": round(score, 4),
-                    "left_only": sorted(gates[i].fingerprints - gates[j].fingerprints),
-                    "right_only": sorted(gates[j].fingerprints - gates[i].fingerprints),
-                    "shared": sorted(gates[i].fingerprints & gates[j].fingerprints),
                 }
             )
     return matrix, overlap_pairs
+
+
+def enrich_pair(pair: dict[str, object], gates_by_name: dict[str, GateProfile]) -> dict[str, object]:
+    """Attach the shared / left_only / right_only fingerprint sets to a pair.
+
+    Called only for high-overlap pairs so an operator can see *what* two gates
+    duplicate. Keeping this lazy is what stops the JSON report from exploding.
+    """
+    left = gates_by_name.get(str(pair.get("left", "")))
+    right = gates_by_name.get(str(pair.get("right", "")))
+    if left is None or right is None:
+        return dict(pair)
+    enriched = dict(pair)
+    enriched["shared"] = sorted(left.fingerprints & right.fingerprints)
+    enriched["left_only"] = sorted(left.fingerprints - right.fingerprints)
+    enriched["right_only"] = sorted(right.fingerprints - left.fingerprints)
+    return enriched
 
 
 def overlap_value(pair: dict[str, object]) -> float:
@@ -321,6 +343,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     ap.add_argument("dir", help="target directory containing gate modules")
     ap.add_argument("--max-gates", type=int, default=49, help="fail if gate count exceeds this")
     ap.add_argument("--max-overlap", type=float, default=0.5, help="fail if overlap > threshold")
+    ap.add_argument("--top", type=int, default=20, help="how many ranked overlap pairs to include in JSON (name+score only)")
+    ap.add_argument("--full-matrix", action="store_true", help="include the full NxN matrix and per-gate fingerprint sets in JSON (large)")
     ap.add_argument("--json", action="store_true", help="emit JSON report")
     args = ap.parse_args(argv)
 
@@ -336,7 +360,15 @@ def main(argv: Optional[list[str]] = None) -> int:
     )
 
     if args.json:
-        high_overlaps = [item for item in overlap_pairs if overlap_value(item) > args.max_overlap]
+        gates_by_name = {g.name: g for g in gate_profiles}
+        high_overlaps = [
+            enrich_pair(item, gates_by_name)
+            for item in overlap_pairs
+            if overlap_value(item) > args.max_overlap
+        ]
+        # Rank all pairs by score but keep only the lightweight name+score rows,
+        # capped, so the report never balloons on a large gate layer.
+        top_pairs = sorted(overlap_pairs, key=lambda p: -overlap_value(p))[: args.top]
         payload = {
             "target_dir": str(root),
             "gate_count": len(gate_profiles),
@@ -347,16 +379,20 @@ def main(argv: Optional[list[str]] = None) -> int:
                     "name": g.name,
                     "path": g.path,
                     "fingerprint_count": len(g.fingerprints),
-                    "fingerprints": sorted(g.fingerprints),
                 }
                 for g in gate_profiles
             ],
-            "matrix": matrix,
             "gate_names": [g.name for g in gate_profiles],
-            "overlap_pairs": overlap_pairs,
+            "top_overlap_pairs": top_pairs,
             "high_overlap_pairs": high_overlaps,
             "orphan_gates": orphans,
         }
+        if args.full_matrix:
+            payload["matrix"] = matrix
+            payload["gates"] = [
+                {**gate_dict, "fingerprints": sorted(g.fingerprints)}
+                for gate_dict, g in zip(payload["gates"], gate_profiles)
+            ]
         payload["overlap_violations"] = high_overlaps
         payload["violations"] = {
             "over_gate_limit": over_gate_limit,
