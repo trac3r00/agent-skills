@@ -9,7 +9,7 @@
     {
       "name": "agent-guards",
       "description": "Five runnable skills that hold a line with an exit code: context-budget (audit per-turn token cost, fail CI when the agent gets fatter), claim-audit (separate grounded/hedged/bare factual claims to catch likely hallucinations), open-loops (extract unresolved commitments, deferrals, and open questions from a transcript so cron/triggers don't lose thread context), subscription-audit (find the recurring charges hiding in a bank/card CSV, report true monthly/yearly cost, flag the forgotten ones worth cancelling), and gate-graph (AST overlap analysis for validator/middleware gates to detect duplicate checks and dead modules). Dependency-light Python, exit-code gates, not prompt wrappers.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "trac3r00"
       },
@@ -27,5 +27,5 @@
       ]
     }
   ],
-  "version": "1.1.0"
+  "version": "1.2.0"
 }

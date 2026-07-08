@@ -9,6 +9,7 @@ CB = ROOT / "skills" / "context-budget" / "scripts" / "context_budget.py"
 CA = ROOT / "skills" / "claim-audit" / "scripts" / "claim_audit.py"
 OL = ROOT / "skills" / "open-loops" / "scripts" / "open_loops.py"
 SA = ROOT / "skills" / "subscription-audit" / "scripts" / "subscription_audit.py"
+GG = ROOT / "skills" / "gate-graph" / "scripts" / "gate_graph.py"
 
 
 def run(script, *args, stdin=None):
@@ -176,4 +177,101 @@ def test_subscription_audit_handles_no_header_negative_semicolon():
 
 def test_subscription_audit_empty_is_error():
     rc, _, _ = run(SA, "-", stdin="")
+    assert rc == 2
+
+
+# ── gate-graph ─────────────────────────────────────────────────────────────
+def _make_gate_layer(tmp_path):
+    """Two near-identical gates (high overlap) + one orphan + one that imports."""
+    (tmp_path / "alpha_gate.py").write_text(
+        "import re\n"
+        "class AlphaGate:\n"
+        "    def check(self, text):\n"
+        "        return re.search(r'danger', text)\n"
+    )
+    (tmp_path / "alpha_gate_copy.py").write_text(
+        "import re\n"
+        "class AlphaGate:\n"
+        "    def check(self, text):\n"
+        "        return re.search(r'danger', text)\n"
+    )
+    (tmp_path / "lonely_gate.py").write_text(
+        "class LonelyGate:\n"
+        "    def evaluate(self, x):\n"
+        "        return x is None\n"
+    )
+    # harness imports alpha_gate → alpha_gate is NOT an orphan
+    (tmp_path / "harness.py").write_text(
+        "from alpha_gate import AlphaGate\n"
+        "def run():\n"
+        "    return AlphaGate()\n"
+    )
+
+
+def test_gate_graph_counts_orphans_and_overlap(tmp_path):
+    _make_gate_layer(tmp_path)
+    rc, out, _ = run(GG, str(tmp_path), "--json")
+    import json
+    data = json.loads(out)
+    assert data["gate_count"] == 4
+    # lonely_gate is imported nowhere → orphan; alpha_gate is imported by harness
+    assert "lonely_gate" in data["orphan_gates"]
+    assert "alpha_gate" not in data["orphan_gates"]
+    # the two identical gates should be the top-ranked overlap pair
+    top = data["top_overlap_pairs"][0]
+    assert {top["left"], top["right"]} == {"alpha_gate", "alpha_gate_copy"}
+    assert top["overlap"] > 0.9
+
+
+def test_gate_graph_json_is_lean_by_default(tmp_path):
+    _make_gate_layer(tmp_path)
+    rc, out, _ = run(GG, str(tmp_path), "--json")
+    import json
+    data = json.loads(out)
+    # no full matrix / per-gate fingerprint dump unless --full-matrix
+    assert "matrix" not in data
+    assert all("fingerprints" not in g for g in data["gates"])
+    # lightweight pairs carry only name+score, no fingerprint diff
+    assert set(data["top_overlap_pairs"][0].keys()) == {"left", "right", "overlap"}
+
+
+def test_gate_graph_full_matrix_opt_in(tmp_path):
+    _make_gate_layer(tmp_path)
+    rc, out, _ = run(GG, str(tmp_path), "--json", "--full-matrix")
+    import json
+    data = json.loads(out)
+    assert "matrix" in data
+    assert len(data["matrix"]) == data["gate_count"]
+    assert any("fingerprints" in g for g in data["gates"])
+
+
+def test_gate_graph_high_overlap_pair_is_enriched(tmp_path):
+    _make_gate_layer(tmp_path)
+    # threshold below the identical-pair score → it becomes a high-overlap pair
+    rc, out, _ = run(GG, str(tmp_path), "--json", "--max-overlap", "0.5")
+    import json
+    data = json.loads(out)
+    assert data["high_overlap_pairs"], "identical gates should breach 0.5"
+    hp = data["high_overlap_pairs"][0]
+    # breaching pairs carry the fingerprint diff so an operator can see what overlaps
+    assert "shared" in hp and "left_only" in hp and "right_only" in hp
+
+
+def test_gate_graph_exit_over_gate_limit(tmp_path):
+    _make_gate_layer(tmp_path)
+    # isolate the gate-count budget from the overlap check with a high threshold
+    rc_over, _, _ = run(GG, str(tmp_path), "--max-gates", "2", "--max-overlap", "1.1")
+    rc_ok, _, _ = run(GG, str(tmp_path), "--max-gates", "100", "--max-overlap", "1.1")
+    assert rc_over == 1
+    assert rc_ok == 0
+
+
+def test_gate_graph_exit_over_overlap(tmp_path):
+    _make_gate_layer(tmp_path)
+    rc, _, _ = run(GG, str(tmp_path), "--max-gates", "100", "--max-overlap", "0.5")
+    assert rc == 1  # identical pair breaches overlap
+
+
+def test_gate_graph_missing_dir_is_error(tmp_path):
+    rc, _, _ = run(GG, str(tmp_path / "nope"))
     assert rc == 2
