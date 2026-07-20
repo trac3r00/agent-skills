@@ -30,9 +30,9 @@ bank or card and it:
 - **normalizes messy merchant names** (`AMZN Mktp US*RT4G9` → `amazon`, store
   numbers and auth codes stripped) so the same service groups together;
 - **reports the true cost** — monthly and annualized — across everything it found;
-- **flags the forgotten ones**: a subscription whose expected next charge is well
-  overdue (`STALE`), or one whose first charge was tiny/zero and then jumped
-  (`trial→paid`), the classic free-trial trap.
+- **flags review candidates**: a subscription whose expected next charge is well
+  overdue (`STALE`), or one whose first non-zero charge was substantially smaller
+  than later charges (`trial→paid`).
 
 No bank login, no Plaid, no cloud. It reads a file you already have, is pure
 standard library, and is deterministic — the same statement always gives the same
@@ -65,9 +65,10 @@ app. It answers exactly one question — *what am I paying for on repeat?*
 3. **Read the stack.** Subscriptions are listed heaviest-first with their monthly
    cost, per-charge amount, cadence, and last-seen date. The footer gives the total
    monthly and yearly burn.
-4. **Act on the flags.** `⚠ STALE` = no charge in a while (likely forgotten);
-   `trial→paid` = a small/zero first charge that later jumped. The summary totals
-   the yearly savings from cutting the stale ones — that's your cancellation list.
+4. **Review the flags.** `⚠ STALE` means no charge appears within the configured
+   interval; `trial→paid` means the first non-zero charge was smaller than later
+   charges. The summary estimates the yearly cost of the stale entries. Confirm
+   each charge with the provider before cancelling it.
 5. **Put it on a leash.** Add `--budget 80` to fail (exit 1) when recurring spend
    passes $80/mo, and drop that into a monthly cron so creep gets caught early.
 
