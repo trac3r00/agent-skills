@@ -1,9 +1,10 @@
 {
   "version": "1.0.0",
-  "count": 51,
+  "count": 52,
   "families": {
     "backend": [
       "api-tester",
+      "changelog-gen",
       "diff-review",
       "doc-reader",
       "env-gate",
@@ -125,6 +126,7 @@
     ],
     "devops": [
       "api-tester",
+      "changelog-gen",
       "diff-review",
       "env-gate",
       "git-master",
@@ -273,6 +275,24 @@
       ],
       "script_backed": false,
       "path": "skills/blindspot"
+    },
+    {
+      "name": "changelog-gen",
+      "description": "Generates a categorized changelog skeleton from conventional commits since a tag or ref \u2014 Added/Changed/Fixed/Documentation/Internal sections with scope annotations preserved. Deterministic; the agent writes prose, this provides the honest skeleton from git history itself.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "changelog",
+        "releases",
+        "git",
+        "documentation"
+      ],
+      "family": "backend",
+      "personas": [
+        "devops"
+      ],
+      "script_backed": true,
+      "path": "skills/changelog-gen"
     },
     {
       "name": "claim-audit",

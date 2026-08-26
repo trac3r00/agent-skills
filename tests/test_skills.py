@@ -1372,3 +1372,55 @@ def test_repo_audit_large_files_and_stale_branch(tmp_path):
     data = json.loads(out)
     assert data["large_files"]
     assert any(b["name"] == "stale-feature" for b in data["branches"])
+
+
+# ── changelog-gen ─────────────────────────────────────────────────────────
+CG = ROOT / "skills" / "changelog-gen" / "scripts" / "changelog_gen.py"
+
+
+def _repo_with_commits(path, messages):
+    import subprocess as sp
+    import os as _os
+    path.mkdir(parents=True, exist_ok=True)
+    sp.run(["git", "init", "-q"], cwd=path, check=True)
+    env = dict(_os.environ, GIT_COMMITTER_DATE="2026-08-01T00:00:00Z",
+               GIT_AUTHOR_DATE="2026-08-01T00:00:00Z")
+    (path / "f.txt").write_text("x")
+    sp.run(["git", "add", "-A"], cwd=path, check=True)
+    sp.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+            "commit", "-qm", "chore: init"], cwd=path, check=True, env=env)
+    sp.run(["git", "tag", "v1.0.0"], cwd=path, check=True)
+    for msg in messages:
+        (path / "f.txt").write_text(msg)
+        sp.run(["git", "add", "-A"], cwd=path, check=True)
+        sp.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+                "commit", "-qm", msg], cwd=path, check=True)
+
+
+def test_changelog_gen_categorizes(tmp_path):
+    repo = tmp_path / "r"
+    _repo_with_commits(repo, ["feat(api): add tokens endpoint",
+                              "fix(auth): reject expired sessions",
+                              "docs: update README"])
+    rc, out, _ = run(CG, "--repo", str(repo), "--since-tag", "v1.0.0", "--json")
+    assert rc == 0
+    data = json.loads(out)
+    assert data["sections"]["Added"] == ["add tokens endpoint (api)"]
+    assert data["sections"]["Fixed"] == ["reject expired sessions (auth)"]
+    assert data["count"] == 3
+
+
+def test_changelog_gen_markdown_output(tmp_path):
+    repo = tmp_path / "r"
+    _repo_with_commits(repo, ["feat: new thing", "perf(core): faster scan"])
+    rc, out, _ = run(CG, "--repo", str(repo), "--since-tag", "v1.0.0")
+    assert rc == 0
+    assert "## Added" in out and "new thing" in out
+    assert "## Changed" in out and "faster scan (core)" in out
+
+
+def test_changelog_gen_no_tag(tmp_path):
+    repo = tmp_path / "r"
+    _repo_with_commits(repo, ["feat: x"])
+    rc, out, _ = run(CG, "--repo", str(repo), "--since-tag", "v9.9.9")
+    assert rc == 2
