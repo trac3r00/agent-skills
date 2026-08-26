@@ -7,7 +7,7 @@ Dependency-light Python tools for auditing AI-agent context, output, handoffs, r
 
 ## Overview
 
-Agent Skills is a collection of 53 [Agent Skills](https://agentskills.io) in five families:
+Agent Skills is a collection of 61 [Agent Skills](https://agentskills.io) in five families:
 
 - **Guards** — runnable audit skills (plus the interop CLIs), each combining an instruction file (`SKILL.md`) with a standalone Python CLI that produces human-readable or JSON output and can return a non-zero status when a configured threshold is exceeded. They run locally, accept files or standard input, and need no credentials or network access.
 - **Interop** — `skill-sync` unifies custom skills across every AI provider install into one universal directory, and `session-handoff` carries work context (session logs, history, files touched) between clients so any agent can continue work started in another.
@@ -35,6 +35,11 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | **Security-sensitive repos** | Agents paste real credentials into examples; installed skills carry injection payloads | [`secret-gate`](skills/secret-gate/), [`skill-audit`](skills/skill-audit/) |
 | **Token cost control** | No client shows cross-client consumption; budgets blow silently | [`usage-audit`](skills/usage-audit/), [`context-budget`](skills/context-budget/) |
 | **Backend / deployment** | New env keys never make it to prod; the deploy crashes at 2am; endpoints return 500s nobody checked | [`env-gate`](skills/env-gate/), [`api-tester`](skills/api-tester/), [`log-analyzer`](skills/log-analyzer/) |
+| **Security / headers** | Pages ship without HSTS or CSP; clickjacking and downgrade attacks stay open | [`sec-headers`](skills/sec-headers/), [`secret-gate`](skills/secret-gate/), [`skill-audit`](skills/skill-audit/) |
+| **Sysops / network** | "Is the box okay?" and "is it reachable?" have no fast deterministic answers | [`sys-health`](skills/sys-health/), [`net-probe`](skills/net-probe/), [`cron-audit`](skills/cron-audit/) |
+| **3D / image generation** | First generations miss the brief; Three.js scenes look like tutorials | [`image-gen`](skills/image-gen/), [`3d-design`](skills/3d-design/), [`design`](skills/design/) |
+| **Graph / dependency data** | Dependency chains and state machines are edge lists nobody can query | [`graph-tools`](skills/graph-tools/) |
+| **Browser extensions** | MV3 boilerplate wastes the first hour of every extension project | [`ext-scaffold`](skills/ext-scaffold/) |
 | **Code review triage** | Reviewers waste time on debug prints, TODOs, and trivial assertions that a machine should catch first | [`diff-review`](skills/diff-review/), [`comment-checker`](skills/comment-checker/), [`code-review`](skills/code-review/), [`merge-quiz`](skills/merge-quiz/) |
 | **Finance / portfolio** | A brokerage export tells you what you own, not whether one position is too big | [`portfolio-audit`](skills/portfolio-audit/) |
 | **Documents** | Agents can't read docx/pptx/xlsx without installing heavy tooling | [`doc-reader`](skills/doc-reader/) |
@@ -88,6 +93,14 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | [`repo-audit`](skills/repo-audit/) | Git repo structural health: LICENSE/README/tests/CI/gitignore, large files, stale merged branches. | `--fail-on` |
 | [`changelog-gen`](skills/changelog-gen/) | Categorized changelog skeleton from conventional commits since a tag: Added/Changed/Fixed/Docs/Internal with scopes. | — |
 | [`code-review`](skills/code-review/) | Strict ice-cold review protocol: every dimension questioned, mandatory severities with file:line triggers, no rubber stamps, verdict with conditions. | — |
+| [`net-probe`](skills/net-probe/) | Port checks, DNS, TLS expiry budgets, HTTP latency — socket/ssl stdlib only, no nmap/dig/openssl. | exit 1 on failure |
+| [`sys-health`](skills/sys-health/) | Machine health snapshot: disk, memory, load, top processes, zombies, with budget alerts. | `--max-*-pct` |
+| [`sec-headers`](skills/sec-headers/) | Grades HTTP security headers (HSTS, CSP, framing, cookies) with an A-F letter grade. | `--min-grade` |
+| [`graph-tools`](skills/graph-tools/) | Directed-graph queries from JSON edge lists: degrees, cycles, BFS shortest paths. | `--fail-on-cycle` |
+| [`ext-scaffold`](skills/ext-scaffold/) | Working Manifest V3 browser extension skeleton — valid on first load, no npm. | — |
+| [`cron-audit`](skills/cron-audit/) | Parses crontabs into concrete schedules with plain-words explanations; flags invalid lines. | exit 1 on invalid |
+| [`3d-design`](skills/3d-design/) | Self-contained Three.js scene scaffolder (CDN, OrbitControls, lighting, primitives) plus 3D design discipline. | — |
+| [`image-gen`](skills/image-gen/) | Image-generation provider routing (gpt-image vs grok) and prompt-structure discipline for first-try results. | — |
 
 ### Creative skills
 
@@ -144,7 +157,7 @@ Claude Code / Codex / compatible Agent Skills host
             text or JSON output + exit status
 ```
 
-The plugin manifests in `.claude-plugin/` and `.codex-plugin/` expose the directories under `skills/`. Twenty-eight skills are script-backed (guards, interop, security, backend, and domain CLIs); the rest are instruction-only — the `SKILL.md` is the skill. Every script is directly executable with Python and does not depend on an agent host.
+The plugin manifests in `.claude-plugin/` and `.codex-plugin/` expose the directories under `skills/`. Thirty-five skills are script-backed (guards, interop, security, backend, and domain CLIs); the rest are instruction-only — the `SKILL.md` is the skill. Every script is directly executable with Python and does not depend on an agent host.
 
 ## Installation
 
@@ -179,7 +192,7 @@ codex plugin marketplace add Trac3r00/agent-skills
 codex plugin add agent-skills@agent-skills
 ```
 
-The plugin installs all 53 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
+The plugin installs all 61 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
 
 ## Usage
 
@@ -270,7 +283,7 @@ To add a skill, follow the contributor contract in [`skills/AGENTS.md`](skills/A
 ├── .claude-plugin/       # Claude Code marketplace and plugin metadata
 ├── .codex-plugin/        # Codex plugin metadata
 ├── .github/workflows/    # CI: pytest matrix + CLI smoke tests
-├── skills/               # 53 skills: SKILL.md instructions, 28 with standalone Python CLIs
+├── skills/               # 61 skills: SKILL.md instructions, 35 with standalone Python CLIs
 ├── tests/test_skills.py  # End-to-end CLI tests + repo-wide frontmatter validation
 ├── LICENSE
 └── README.md

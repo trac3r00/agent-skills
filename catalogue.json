@@ -1,25 +1,33 @@
 {
   "version": "1.0.0",
-  "count": 53,
+  "count": 61,
   "families": {
     "backend": [
       "api-tester",
       "changelog-gen",
       "code-review",
+      "cron-audit",
       "diff-review",
       "doc-reader",
       "env-gate",
+      "ext-scaffold",
+      "graph-tools",
       "json-diff",
       "log-analyzer",
+      "net-probe",
       "portfolio-audit",
       "repo-audit",
       "resume-audit",
-      "seo-audit"
+      "sec-headers",
+      "seo-audit",
+      "sys-health"
     ],
     "creative": [
+      "3d-design",
       "algorithmic-art",
       "css-pro-tips",
       "design",
+      "image-gen",
       "nbj-write-clearly",
       "visual-qa",
       "webapp-testing"
@@ -118,9 +126,11 @@
       "test-driven-development"
     ],
     "design": [
+      "3d-design",
       "algorithmic-art",
       "css-pro-tips",
       "design",
+      "image-gen",
       "nbj-write-clearly",
       "seo-audit",
       "visual-qa"
@@ -183,6 +193,25 @@
     ]
   },
   "skills": [
+    {
+      "name": "3d-design",
+      "description": "3D scene work in the browser \u2014 a scaffolder that emits a self-contained Three.js scene as one HTML file (CDN import, OrbitControls, three-point lighting, grid, and your chosen primitives laid out), plus the design discipline for making 3D scenes that don't look like tutorial demos. No build step; open the file in a browser.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "3d",
+        "three.js",
+        "webgl",
+        "design",
+        "scaffold"
+      ],
+      "family": "creative",
+      "personas": [
+        "design"
+      ],
+      "script_backed": true,
+      "path": "skills/3d-design"
+    },
     {
       "name": "algorithmic-art",
       "description": "Creating algorithmic art using p5.js with seeded randomness and interactive parameter exploration. Use this when users request creating art using code, generative art, algorithmic art, flow fields, or particle systems. Create original algorithmic art rather than copying existing artists' work to avoid copyright violations.",
@@ -371,6 +400,23 @@
       "path": "skills/context-budget"
     },
     {
+      "name": "cron-audit",
+      "description": "Parses a crontab, expands every schedule into concrete values, explains each job in plain words, and flags invalid lines, impossible schedules, and over-frequent jobs. Crontab syntax is write-only for most humans; this makes it readable. Stdlib-only, deterministic.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "cron",
+        "scheduling",
+        "sysops",
+        "automation",
+        "ci-gate"
+      ],
+      "family": "backend",
+      "personas": [],
+      "script_backed": true,
+      "path": "skills/cron-audit"
+    },
+    {
       "name": "css-pro-tips",
       "description": "Use when writing, reviewing, refactoring, or modernizing CSS/Tailwind with source-validated patterns for resets, box sizing, focus styles, centering, aspect ratios, selectors, layout, modern CSS, progressive enhancement, older-pattern modernization, MDN Baseline support buckets, user-preference media queries (reduced motion, contrast, forced colors, reduced transparency), container size and style queries, @property, popovers, View Transitions, custom highlights, scroll-state queries, text-box trim, and typed attr().",
       "version": "1.0.0",
@@ -494,6 +540,22 @@
       "path": "skills/env-gate"
     },
     {
+      "name": "ext-scaffold",
+      "description": "Generates a working Manifest V3 browser extension skeleton \u2014 manifest.json, background service worker, content script, and popup \u2014 valid on first load in Chrome/Edge/Firefox with no npm and no bundler. Refuses to overwrite an existing directory. Use when starting any browser extension instead of writing boilerplate.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "browser-extension",
+        "manifest-v3",
+        "chrome",
+        "scaffold"
+      ],
+      "family": "backend",
+      "personas": [],
+      "script_backed": true,
+      "path": "skills/ext-scaffold"
+    },
+    {
       "name": "gate-graph",
       "description": "Find overlap and dead weight in a Python gate layer by extracting AST fingerprints, generating an overlap matrix, and failing CI when redundant gates or too many gates are detected.",
       "version": "1.0.0",
@@ -535,6 +597,22 @@
       "path": "skills/git-master"
     },
     {
+      "name": "graph-tools",
+      "description": "Builds and queries directed graphs from JSON edge lists \u2014 node/edge counts, in/out degree stats, cycle detection via DFS coloring, and BFS shortest paths. Dependency chains, call graphs, state machines, and org structures are all edge lists until someone makes them queryable. Stdlib-only, deterministic.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "graphs",
+        "dependencies",
+        "algorithms",
+        "ci-gate"
+      ],
+      "family": "backend",
+      "personas": [],
+      "script_backed": true,
+      "path": "skills/graph-tools"
+    },
+    {
       "name": "grilling",
       "description": "Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, or uses any 'grill' trigger phrases.",
       "version": "1.0.0",
@@ -551,6 +629,24 @@
       ],
       "script_backed": false,
       "path": "skills/grilling"
+    },
+    {
+      "name": "image-gen",
+      "description": "Image generation routing and prompt discipline \u2014 which provider for which job (gpt-image for text rendering and design fidelity, grok for fast iteration and photoreal people), how to structure prompts that survive the model (subject, composition, style, lighting, negatives), and the honest constraints of each provider installed on this machine. Use before generating any image so the first generation is closer to the brief.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "image-generation",
+        "prompts",
+        "design",
+        "providers"
+      ],
+      "family": "creative",
+      "personas": [
+        "design"
+      ],
+      "script_backed": false,
+      "path": "skills/image-gen"
     },
     {
       "name": "json-diff",
@@ -675,6 +771,23 @@
       "path": "skills/nbj-write-clearly"
     },
     {
+      "name": "net-probe",
+      "description": "Network diagnostics with only the stdlib socket/ssl modules \u2014 port checks (connect-based, not SYN-scan), DNS resolution, TLS certificate expiry with day budget, and HTTP latency sampling. The \"is it up, is it reachable, is the cert about to die\" triage without nmap, dig, or openssl.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "network",
+        "tls",
+        "dns",
+        "ports",
+        "diagnostics"
+      ],
+      "family": "backend",
+      "personas": [],
+      "script_backed": true,
+      "path": "skills/net-probe"
+    },
+    {
       "name": "open-loops",
       "description": "Extracts the unresolved commitments, deferrals, decisions, and open questions from a conversation transcript into a small JSON ledger \u2014 so a different surface (a cron job, a trigger, a fresh session) can pick them up instead of dropping them. Use to hand off context across surfaces, or to gate a session/thread handoff on how much is left open.",
       "version": "1.0.0",
@@ -770,6 +883,23 @@
       ],
       "script_backed": true,
       "path": "skills/resume-audit"
+    },
+    {
+      "name": "sec-headers",
+      "description": "Grades the HTTP security headers of a URL \u2014 HSTS, Content-Security-Policy, framing protection (X-Frame-Options/frame-ancestors), X-Content-Type-Options, Referrer-Policy, and cookie Secure/HttpOnly flags \u2014 with an A-F letter grade and per-header pass/warn/fail. Stdlib-only fetch, no browser.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "security",
+        "http",
+        "headers",
+        "web",
+        "ci-gate"
+      ],
+      "family": "backend",
+      "personas": [],
+      "script_backed": true,
+      "path": "skills/sec-headers"
     },
     {
       "name": "secret-gate",
@@ -1013,6 +1143,23 @@
       ],
       "script_backed": true,
       "path": "skills/subscription-audit"
+    },
+    {
+      "name": "sys-health",
+      "description": "One-shot machine health report \u2014 disk usage, memory pressure, load average, top CPU processes, and zombie count \u2014 from native system interfaces (statvfs, sysctl/vm_stat, ps), no psutil or vendor binaries. Budgets turn it into a gate that alerts when disk or memory pressure crosses a threshold.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "sysops",
+        "monitoring",
+        "disk",
+        "memory",
+        "processes"
+      ],
+      "family": "backend",
+      "personas": [],
+      "script_backed": true,
+      "path": "skills/sys-health"
     },
     {
       "name": "systematic-debugging",

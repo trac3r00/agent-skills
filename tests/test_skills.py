@@ -1465,3 +1465,193 @@ def test_secret_gate_more_providers(tmp_path):
     assert "stripe-key" in kinds
     assert "sendgrid-key" in kinds
     assert "npm-token" in kinds
+
+
+# ── net-probe ─────────────────────────────────────────────────────────────
+NP = ROOT / "skills" / "net-probe" / "scripts" / "net_probe.py"
+
+
+def test_net_probe_open_and_closed_port():
+    import socket, threading
+    srv = socket.socket()
+    srv.bind(("127.0.0.1", 0))
+    port = srv.getsockname()[1]
+    srv.listen(1)
+    threading.Thread(target=lambda: srv.accept(), daemon=True).start()
+    rc, out, _ = run(NP, "--port-check", f"127.0.0.1:{port}", "--json")
+    assert rc == 0
+    assert json.loads(out)["results"][0]["open"] is True
+    srv.close()
+    rc, out, _ = run(NP, "--port-check", f"127.0.0.1:{port}", "--json")
+    assert json.loads(out)["results"][0]["open"] is False
+
+
+def test_net_probe_dns():
+    rc, out, _ = run(NP, "--dns", "localhost", "--json")
+    assert rc == 0
+    addrs = json.loads(out)["addresses"]
+    assert any("127.0.0.1" in a or "::1" in a for a in addrs)
+
+
+# ── sys-health ────────────────────────────────────────────────────────────
+SH2 = ROOT / "skills" / "sys-health" / "scripts" / "sys_health.py"
+
+
+def test_sys_health_reports_metrics():
+    rc, out, _ = run(SH2, "--json")
+    assert rc in (0, 1)
+    data = json.loads(out)
+    assert data["disk"]["total_gb"] > 0
+    assert data["memory"]["total_gb"] > 0
+    assert data["load"]["1m"] >= 0
+    assert isinstance(data["top_processes"], list) and data["top_processes"]
+
+
+def test_sys_health_budget_gate():
+    rc, out, _ = run(SH2, "--json", "--max-disk-pct", "0")
+    assert rc == 1
+    assert json.loads(out)["alerts"]
+
+
+# ── sec-headers ───────────────────────────────────────────────────────────
+SEC = ROOT / "skills" / "sec-headers" / "scripts" / "sec_headers.py"
+
+
+def test_sec_headers_scores_response(tmp_path):
+    import http.server, threading
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header("Strict-Transport-Security", "max-age=63072000")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Content-Security-Policy", "default-src 'self'")
+            self.send_header("X-Frame-Options", "DENY")
+            self.end_headers()
+            self.wfile.write(b"ok")
+        def log_message(self, *a): pass
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        rc, out, _ = run(SEC, f"http://127.0.0.1:{srv.server_port}/", "--json")
+        data = json.loads(out)
+        assert rc == 0
+        assert data["grade"] in ("A", "B")
+        assert data["headers"]["strict-transport-security"]["status"] == "pass"
+    finally:
+        srv.shutdown()
+
+
+def test_sec_headers_flags_missing(tmp_path):
+    import http.server, threading
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"ok")
+        def log_message(self, *a): pass
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        rc, out, _ = run(SEC, f"http://127.0.0.1:{srv.server_port}/", "--json")
+        data = json.loads(out)
+        assert rc == 1
+        assert data["grade"] in ("D", "F")
+    finally:
+        srv.shutdown()
+
+
+# ── graph-tools ───────────────────────────────────────────────────────────
+GT = ROOT / "skills" / "graph-tools" / "scripts" / "graph_tools.py"
+
+
+def test_graph_tools_path_and_cycles(tmp_path):
+    f = tmp_path / "edges.json"
+    f.write_text(json.dumps({"edges": [
+        ["a", "b"], ["b", "c"], ["c", "a"], ["c", "d"]]}))
+    rc, out, _ = run(GT, str(f), "--json")
+    data = json.loads(out)
+    assert rc == 1
+    assert data["nodes"] == 4 and data["edges"] == 4
+    assert data["cycles"], "cycle a->b->c->a expected"
+    rc, out, _ = run(GT, str(f), "--path", "a", "d", "--json")
+    assert json.loads(out)["path"] == ["a", "b", "c", "d"]
+
+
+def test_graph_tools_acyclic(tmp_path):
+    f = tmp_path / "dag.json"
+    f.write_text(json.dumps({"edges": [["a", "b"], ["b", "c"]]}))
+    rc, out, _ = run(GT, str(f), "--stats", "--json")
+    data = json.loads(out)
+    assert rc == 0
+    assert data["cycles"] == []
+    assert data["stats"]["in_degree"]["c"] == 1
+
+
+# ── ext-scaffold ──────────────────────────────────────────────────────────
+XS = ROOT / "skills" / "ext-scaffold" / "scripts" / "ext_scaffold.py"
+
+
+def test_ext_scaffold_generates_valid_extension(tmp_path):
+    out_dir = tmp_path / "my-ext"
+    rc, out, _ = run(XS, "my-ext", "--dir", str(tmp_path), "--json")
+    assert rc == 0
+    manifest = json.loads((out_dir / "manifest.json").read_text())
+    assert manifest["manifest_version"] == 3
+    assert manifest["name"] == "my-ext"
+    assert (out_dir / "background.js").is_file()
+    assert (out_dir / "content.js").is_file()
+    assert (out_dir / "popup.html").is_file()
+
+
+def test_ext_scaffold_refuses_existing(tmp_path):
+    (tmp_path / "dup").mkdir()
+    rc, _, err = run(XS, "dup", "--dir", str(tmp_path))
+    assert rc == 2
+
+
+# ── cron-audit ────────────────────────────────────────────────────────────
+CRA = ROOT / "skills" / "cron-audit" / "scripts" / "cron_audit.py"
+
+
+def test_cron_audit_parses_and_explains(tmp_path):
+    f = tmp_path / "crontab.txt"
+    f.write_text("0 2 * * * /usr/bin/backup.sh\n"
+                 "*/15 9-17 * * 1-5 /opt/app/poll.sh\n"
+                 "bad line here\n")
+    rc, out, _ = run(CRA, str(f), "--json")
+    data = json.loads(out)
+    assert rc == 1
+    assert data["jobs"] == 2
+    assert data["invalid"] == 1
+    daily = next(j for j in data["entries"] if "backup" in j["command"])
+    assert daily["schedule"]["hour"] == [2] and daily["schedule"]["minute"] == [0]
+    poll = next(j for j in data["entries"] if "poll" in j["command"])
+    assert poll["schedule"]["weekday"] == [1, 2, 3, 4, 5]
+
+
+def test_cron_audit_clean(tmp_path):
+    f = tmp_path / "ok.txt"
+    f.write_text("30 4 * * 0 /bin/weekly\n")
+    rc, out, _ = run(CRA, str(f), "--json")
+    assert rc == 0
+    assert json.loads(out)["invalid"] == 0
+
+
+# ── 3d-design (scaffold) ──────────────────────────────────────────────────
+TD = ROOT / "skills" / "3d-design" / "scripts" / "scaffold_3d.py"
+
+
+def test_scaffold_3d_generates_scene(tmp_path):
+    out = tmp_path / "scene.html"
+    rc, _, _ = run(TD, "--objects", "cube,sphere,plane", "--out", str(out), "--json")
+    assert rc == 0
+    html = out.read_text()
+    assert "three" in html.lower()
+    assert "OrbitControls" in html
+    assert "BoxGeometry" in html and "SphereGeometry" in html
+    assert "AmbientLight" in html or "DirectionalLight" in html
+
+
+def test_scaffold_3d_unknown_object(tmp_path):
+    rc, _, err = run(TD, "--objects", "hypercube9d", "--out", str(tmp_path / "x.html"))
+    assert rc == 2
