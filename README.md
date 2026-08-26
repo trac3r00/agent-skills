@@ -2,16 +2,16 @@
 
 Dependency-light Python tools for auditing AI-agent context, output, handoffs, recurring costs, gate overlap, and capability usage — plus portable creative skills for design, generative art, and browser testing.
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Overview
 
-Agent Skills is a collection of 31 [Agent Skills](https://agentskills.io) in six families:
+Agent Skills is a collection of 31 [Agent Skills](https://agentskills.io) in five families:
 
-- **Guards** — six runnable skills, each combining an instruction file (`SKILL.md`) with a standalone Python CLI that produces human-readable or JSON output and can return a non-zero status when a configured threshold is exceeded. They run locally, accept files or standard input, and need no credentials or network access.
+- **Guards** — runnable audit skills (plus the interop CLIs), each combining an instruction file (`SKILL.md`) with a standalone Python CLI that produces human-readable or JSON output and can return a non-zero status when a configured threshold is exceeded. They run locally, accept files or standard input, and need no credentials or network access.
 - **Interop** — `skill-sync` unifies custom skills across every AI provider install into one universal directory, and `session-handoff` carries work context (session logs, history, files touched) between clients so any agent can continue work started in another.
-- **Creative** — three portable skills derived from [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0), consolidated and de-branded so any SKILL.md-reading agent can use them outside Claude Code.
+- **Creative** — design, art, frontend, and writing skills: three derived from [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0), consolidated and de-branded so any SKILL.md-reading agent can use them outside Claude Code, plus community CSS and technical-writing skills.
 - **Process** — engineering-discipline skills from [obra/superpowers](https://github.com/obra/superpowers) (MIT) and [hiendinhngoc/unknowns](https://github.com/hiendinhngoc/unknowns) (MIT): root-cause debugging, TDD, evidence-before-claims verification, git worktrees, pre-work blindspot recon, reference comprehension gates, deviation logging, and pre-merge quizzes.
 - **Power tools** — heavyweight skills ported from [oh-my-opencode / omo-ai](https://github.com/code-yeongyu/oh-my-opencode) and anthropics/skills: git mastery, escalation web browsing with WAF bypass, LSP setup for 20 languages, AI-slop removal, and skill authoring/evaluation.
 
@@ -68,7 +68,7 @@ The repository can be used directly from a clone or installed as the `agent-skil
 | [`skill-creator`](skills/skill-creator/) | Author, validate, package, and eval-test new agent skills, with grader/comparator agent prompts. |
 | [`skill-optimizer`](skills/skill-optimizer/) | Refines existing skills through real usage: saves tokens, eliminates redundancy, tightens instructions. |
 
-All tools support JSON output. They operate offline and do not require credentials or network access.
+All guard CLIs support JSON output, operate offline, and require no credentials or network access.
 
 ## Architecture
 
@@ -79,27 +79,27 @@ Claude Code / Codex / compatible Agent Skills host
                         |
                 skills/<name>/
                 |             |
-             SKILL.md      scripts/*.py
+             SKILL.md     [scripts/*.py]
                                 |
                  files or stdin input
                                 |
             text or JSON output + exit status
 ```
 
-The plugin manifests in `.claude-plugin/` and `.codex-plugin/` expose the directories under `skills/`. Each script is also directly executable with Python and does not depend on an agent host.
+The plugin manifests in `.claude-plugin/` and `.codex-plugin/` expose the directories under `skills/`. Nine skills are script-backed (guards plus `skill-sync`, `session-handoff`); the rest are instruction-only — the `SKILL.md` is the skill. Every script is directly executable with Python and does not depend on an agent host.
 
 ## Installation
 
 ### Run from a clone
 
-Python 3.10 or later is required.
+Python 3.9 or later is required (CI tests 3.9, 3.11, and 3.12).
 
 ```bash
 git clone https://github.com/Trac3r00/agent-skills.git
 cd agent-skills
 ```
 
-Five tools use only the Python standard library. `context-budget` also runs without third-party packages, but uses the `cl100k_base` tokenizer when `tiktoken` is installed and otherwise falls back to an approximate character-based count.
+All script-backed skills use only the Python standard library. `context-budget` also runs without third-party packages, but uses the `cl100k_base` tokenizer when `tiktoken` is installed and otherwise falls back to an approximate character-based count.
 
 ```bash
 python3 -m pip install tiktoken  # optional, for tokenizer-based context counts
@@ -121,7 +121,7 @@ codex plugin marketplace add Trac3r00/agent-skills
 codex plugin add agent-skills@agent-skills
 ```
 
-The plugin installs all six skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host.
+The plugin installs all 31 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
 
 ## Usage
 
@@ -201,7 +201,9 @@ python3 -m pip install pytest
 pytest tests/test_skills.py
 ```
 
-No CI workflow is currently included in this repository.
+The suite covers every script-backed CLI end-to-end and validates every skill's `SKILL.md` frontmatter (name matches directory, discoverable description). CI (`.github/workflows/tests.yml`) runs it on Python 3.9, 3.11, and 3.12 for pushes to `main` and pull requests.
+
+To add a skill, follow the contributor contract in [`skills/AGENTS.md`](skills/AGENTS.md): frontmatter requirements, the CLI and gate conventions, and the manifest registration checklist.
 
 ## Project structure
 
@@ -209,8 +211,9 @@ No CI workflow is currently included in this repository.
 .
 ├── .claude-plugin/       # Claude Code marketplace and plugin metadata
 ├── .codex-plugin/        # Codex plugin metadata
-├── skills/               # Skill instructions and standalone Python CLIs
-├── tests/test_skills.py  # End-to-end CLI tests
+├── .github/workflows/    # CI: pytest matrix + CLI smoke tests
+├── skills/               # 31 skills: SKILL.md instructions, 9 with standalone Python CLIs
+├── tests/test_skills.py  # End-to-end CLI tests + repo-wide frontmatter validation
 ├── LICENSE
 └── README.md
 ```
