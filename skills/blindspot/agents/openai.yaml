@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blindspot Pass"
+  short_description: "Find hidden risks before implementation"
+  default_prompt: "Use $blindspot to scan this area for concrete risks before any code changes."

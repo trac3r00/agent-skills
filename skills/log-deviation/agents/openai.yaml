@@ -1,0 +1,4 @@
+interface:
+  display_name: "Log Deviation"
+  short_description: "Record when implementation breaks the plan"
+  default_prompt: "Use $log-deviation to record how implementation reality changed the plan."

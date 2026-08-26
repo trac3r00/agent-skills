@@ -1,0 +1,4 @@
+interface:
+  display_name: "Merge Quiz"
+  short_description: "Test understanding of risky branch changes"
+  default_prompt: "Use $merge-quiz to quiz me on the riskiest parts of this branch."

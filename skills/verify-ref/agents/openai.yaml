@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify Reference"
+  short_description: "Prove understanding before adapting code"
+  default_prompt: "Use $verify-ref to prove how this reference behaves before adapting it."
