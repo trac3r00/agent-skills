@@ -1,12 +1,13 @@
 {
   "version": "1.0.0",
-  "count": 48,
+  "count": 49,
   "families": {
     "backend": [
       "api-tester",
       "diff-review",
       "doc-reader",
       "env-gate",
+      "log-analyzer",
       "portfolio-audit",
       "resume-audit",
       "seo-audit"
@@ -88,6 +89,7 @@
       "doc-reader",
       "env-gate",
       "git-master",
+      "log-analyzer",
       "lsp-setup",
       "portfolio-audit",
       "systematic-debugging",
@@ -123,6 +125,7 @@
       "diff-review",
       "env-gate",
       "git-master",
+      "log-analyzer",
       "lsp-setup",
       "secret-gate"
     ],
@@ -524,6 +527,26 @@
       ],
       "script_backed": false,
       "path": "skills/linus-level"
+    },
+    {
+      "name": "log-analyzer",
+      "description": "Groups a log file's errors by pattern and ranks offenders \u2014 normalizes volatile tokens (timestamps, UUIDs, IPs, paths, numbers) so \"connection refused to db-01\" and \"db-99\" count as one problem seen N times. Handles both level-tagged logs (ERROR/WARN/INFO) and exception-style stack logs (DaemonError:, Traceback). Offline, stdlib-only, deterministic.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "logs",
+        "debugging",
+        "backend",
+        "errors",
+        "ci-gate"
+      ],
+      "family": "backend",
+      "personas": [
+        "backend",
+        "devops"
+      ],
+      "script_backed": true,
+      "path": "skills/log-analyzer"
     },
     {
       "name": "log-deviation",
