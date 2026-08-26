@@ -1424,3 +1424,44 @@ def test_changelog_gen_no_tag(tmp_path):
     _repo_with_commits(repo, ["feat: x"])
     rc, out, _ = run(CG, "--repo", str(repo), "--since-tag", "v9.9.9")
     assert rc == 2
+
+
+# ── secret-gate: git-guardian upgrade ─────────────────────────────────────
+def test_secret_gate_history_mode(tmp_path):
+    import subprocess as sp
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    sp.run(["git", "init", "-q"], cwd=repo, check=True)
+    stripe_tok = "sk_" + "live_" + "x0" * 16
+    (repo / "cfg.py").write_text(f'stripe_key = "{stripe_tok}"\n')
+    sp.run(["git", "add", "-A"], cwd=repo, check=True)
+    sp.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+            "commit", "-qm", "add config"], cwd=repo, check=True)
+    (repo / "cfg.py").write_text('stripe_key = "REDACTED"\n')
+    sp.run(["git", "add", "-A"], cwd=repo, check=True)
+    sp.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+            "commit", "-qm", "oops remove key"], cwd=repo, check=True)
+    rc, out, _ = run(SG, "--history", "--repo", str(repo), "--json")
+    data = json.loads(out)
+    assert rc == 1
+    assert any("sk_live" in h["match"] or h["kind"] == "stripe-key"
+               for h in data["findings"])
+    assert any(h.get("commit") for h in data["findings"])
+
+
+def test_secret_gate_more_providers(tmp_path):
+    f = tmp_path / "keys.txt"
+    s1_tok = "sk_" + "live_" + "x0" * 16
+    s2_tok = "S" + "G." + "a1" * 12 + "." + "b2" * 22
+    s3_tok = "np" + "m_" + "c3" * 18
+    f.write_text(
+        f's1 = "{s1_tok}"\n'
+        f's2 = "{s2_tok}"\n'
+        f's3 = "{s3_tok}"\n'
+    )
+    rc, out, _ = run(SG, str(f), "--json")
+    data = json.loads(out)
+    kinds = {h["kind"] for h in data["findings"]}
+    assert "stripe-key" in kinds
+    assert "sendgrid-key" in kinds
+    assert "npm-token" in kinds

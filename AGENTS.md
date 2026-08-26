@@ -5,7 +5,7 @@
 **Branch:** main
 
 ## OVERVIEW
-52 agent skills (SKILL.md standard) in five families; 28 are script-backed stdlib-only Python CLIs with exit-code gates, 22 are instruction-only. Installable as a Claude Code / Codex plugin or used from a clone by any SKILL.md-reading agent.
+53 agent skills (SKILL.md standard) in five families; 28 are script-backed stdlib-only Python CLIs with exit-code gates, 22 are instruction-only. Installable as a Claude Code / Codex plugin or used from a clone by any SKILL.md-reading agent.
 
 ## STRUCTURE
 ```
@@ -50,7 +50,7 @@ agent-skills/
 
 ## COMMANDS
 ```bash
-uvx pytest tests/ -q                 # full suite (96 tests)
+uvx pytest tests/ -q                 # full suite (98 tests)
 python3 skills/<s>/scripts/<s>.py --help
 ```
 

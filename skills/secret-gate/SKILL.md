@@ -21,6 +21,8 @@ python3 scripts/secret_gate.py src/ config.py          # scan files/dirs
 git diff | python3 scripts/secret_gate.py --diff       # only added lines
 git diff --cached | python3 scripts/secret_gate.py --diff   # pre-commit
 python3 scripts/secret_gate.py --diff --json < changes.patch
+python3 scripts/secret_gate.py --history --repo .      # git-guardian mode: scan commit history
+python3 scripts/secret_gate.py --history --repo . --max-commits 500
 ```
 
 Exit 1 on any finding — wire it straight into pre-commit or CI.
@@ -28,7 +30,9 @@ Exit 1 on any finding — wire it straight into pre-commit or CI.
 ## Detects
 
 - Structured keys: AWS (`AKIA...`), GitHub (`ghp_`/`github_pat_`), OpenAI/
-  Anthropic-style (`sk-`, `sk-ant-`), Slack (`xox?-`), GCP (`AIza...`)
+  Anthropic-style (`sk-`, `sk-ant-`), Slack (`xox?-`), GCP (`AIza...`),
+  Stripe (`sk_live_`/`rk_live_`), SendGrid (`SG....`), npm, PyPI, Discord,
+  basic-auth URIs
 - Private key blocks, JWTs
 - Assigned passwords/secrets: `password = "..."`, `api_key: '...'`
 - High-entropy strings assigned to secret-shaped names (Shannon entropy > 4.0)

@@ -36,7 +36,7 @@ FAMILIES = {
     "interop": ["skill-sync", "session-handoff", "session-rules", "usage-audit"],
     "security": ["secret-gate", "skill-audit", "usage-audit"],
     "backend": ["env-gate", "diff-review", "portfolio-audit", "doc-reader",
-                "seo-audit", "resume-audit", "api-tester", "log-analyzer", "json-diff", "repo-audit", "changelog-gen"],
+                "seo-audit", "resume-audit", "api-tester", "log-analyzer", "json-diff", "repo-audit", "changelog-gen", "code-review"],
     "process": ["systematic-debugging", "test-driven-development",
                 "verification-before-completion", "using-git-worktrees",
                 "blindspot", "verify-ref", "log-deviation", "merge-quiz",

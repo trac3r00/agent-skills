@@ -7,7 +7,7 @@ Dependency-light Python tools for auditing AI-agent context, output, handoffs, r
 
 ## Overview
 
-Agent Skills is a collection of 52 [Agent Skills](https://agentskills.io) in five families:
+Agent Skills is a collection of 53 [Agent Skills](https://agentskills.io) in five families:
 
 - **Guards** — runnable audit skills (plus the interop CLIs), each combining an instruction file (`SKILL.md`) with a standalone Python CLI that produces human-readable or JSON output and can return a non-zero status when a configured threshold is exceeded. They run locally, accept files or standard input, and need no credentials or network access.
 - **Interop** — `skill-sync` unifies custom skills across every AI provider install into one universal directory, and `session-handoff` carries work context (session logs, history, files touched) between clients so any agent can continue work started in another.
@@ -35,7 +35,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | **Security-sensitive repos** | Agents paste real credentials into examples; installed skills carry injection payloads | [`secret-gate`](skills/secret-gate/), [`skill-audit`](skills/skill-audit/) |
 | **Token cost control** | No client shows cross-client consumption; budgets blow silently | [`usage-audit`](skills/usage-audit/), [`context-budget`](skills/context-budget/) |
 | **Backend / deployment** | New env keys never make it to prod; the deploy crashes at 2am; endpoints return 500s nobody checked | [`env-gate`](skills/env-gate/), [`api-tester`](skills/api-tester/), [`log-analyzer`](skills/log-analyzer/) |
-| **Code review triage** | Reviewers waste time on debug prints, TODOs, and trivial assertions that a machine should catch first | [`diff-review`](skills/diff-review/), [`comment-checker`](skills/comment-checker/), [`merge-quiz`](skills/merge-quiz/) |
+| **Code review triage** | Reviewers waste time on debug prints, TODOs, and trivial assertions that a machine should catch first | [`diff-review`](skills/diff-review/), [`comment-checker`](skills/comment-checker/), [`code-review`](skills/code-review/), [`merge-quiz`](skills/merge-quiz/) |
 | **Finance / portfolio** | A brokerage export tells you what you own, not whether one position is too big | [`portfolio-audit`](skills/portfolio-audit/) |
 | **Documents** | Agents can't read docx/pptx/xlsx without installing heavy tooling | [`doc-reader`](skills/doc-reader/) |
 | **Web / SEO** | Pages ship without title, meta description, or alt text — invisible to search and share | [`seo-audit`](skills/seo-audit/) |
@@ -87,6 +87,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | [`json-diff`](skills/json-diff/) | Semantic JSON diff by path: added/removed/changed with values, nested objects, positional arrays. | `--max-changes` |
 | [`repo-audit`](skills/repo-audit/) | Git repo structural health: LICENSE/README/tests/CI/gitignore, large files, stale merged branches. | `--fail-on` |
 | [`changelog-gen`](skills/changelog-gen/) | Categorized changelog skeleton from conventional commits since a tag: Added/Changed/Fixed/Docs/Internal with scopes. | — |
+| [`code-review`](skills/code-review/) | Strict ice-cold review protocol: every dimension questioned, mandatory severities with file:line triggers, no rubber stamps, verdict with conditions. | — |
 
 ### Creative skills
 
@@ -178,7 +179,7 @@ codex plugin marketplace add Trac3r00/agent-skills
 codex plugin add agent-skills@agent-skills
 ```
 
-The plugin installs all 52 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
+The plugin installs all 53 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
 
 ## Usage
 
@@ -269,7 +270,7 @@ To add a skill, follow the contributor contract in [`skills/AGENTS.md`](skills/A
 ├── .claude-plugin/       # Claude Code marketplace and plugin metadata
 ├── .codex-plugin/        # Codex plugin metadata
 ├── .github/workflows/    # CI: pytest matrix + CLI smoke tests
-├── skills/               # 52 skills: SKILL.md instructions, 28 with standalone Python CLIs
+├── skills/               # 53 skills: SKILL.md instructions, 28 with standalone Python CLIs
 ├── tests/test_skills.py  # End-to-end CLI tests + repo-wide frontmatter validation
 ├── LICENSE
 └── README.md

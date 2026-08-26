@@ -1,10 +1,11 @@
 {
   "version": "1.0.0",
-  "count": 52,
+  "count": 53,
   "families": {
     "backend": [
       "api-tester",
       "changelog-gen",
+      "code-review",
       "diff-review",
       "doc-reader",
       "env-gate",
@@ -312,6 +313,23 @@
       ],
       "script_backed": true,
       "path": "skills/claim-audit"
+    },
+    {
+      "name": "code-review",
+      "description": "Strict, ice-cold code review protocol \u2014 nothing is assumed, everything is questioned, every claim requires evidence. Reviews a diff or change set across correctness, security, error handling, API contracts, performance, and test integrity, with mandatory severity ratings and a no-rubber-stamp rule. The LLM-driven review pass that diff-review's mechanical checks cannot do.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "code-review",
+        "rigor",
+        "verification",
+        "quality",
+        "adversarial"
+      ],
+      "family": "backend",
+      "personas": [],
+      "script_backed": false,
+      "path": "skills/code-review"
     },
     {
       "name": "comment-checker",

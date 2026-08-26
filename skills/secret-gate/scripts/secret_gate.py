@@ -35,6 +35,12 @@ RULES: list[tuple[str, re.Pattern]] = [
     ("anthropic-key", re.compile(r"\bsk-ant-[A-Za-z0-9_-]{20,}\b")),
     ("slack-token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b")),
     ("gcp-api-key", re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b")),
+    ("stripe-key", re.compile(r"\b[sr]k_(live|test)_[0-9A-Za-z]{16,}\b")),
+    ("sendgrid-key", re.compile(r"\bSG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\b")),
+    ("npm-token", re.compile(r"\bnpm_[A-Za-z0-9]{30,}\b")),
+    ("pypi-token", re.compile(r"\bpypi-AgEIcHlwaS5vcmc[A-Za-z0-9_-]{16,}\b")),
+    ("discord-token", re.compile(r"\b[MN][A-Za-z\d]{23,}\.[\w-]{6}\.[\w-]{20,}\b")),
+    ("basic-auth-uri", re.compile(r"[a-z][a-z0-9+.-]*://[^\s:/@]+:[^\s/@]{8,}@")),
     ("private-key-block", re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY(?: BLOCK)?-----")),
     ("jwt", re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b")),
     ("assigned-password", re.compile(
@@ -95,7 +101,7 @@ def scan_file(path: Path, allows: list[re.Pattern]) -> list[dict]:
     return findings
 
 
-def scan_diff(diff: str, allows: list[re.Pattern]) -> list[dict]:
+def scan_diff(diff: str, allows: list[re.Pattern], commit: str = "") -> list[dict]:
     findings, current, new_line = [], "", 0
     for raw in diff.splitlines():
         if raw.startswith("+++ "):
@@ -105,9 +111,35 @@ def scan_diff(diff: str, allows: list[re.Pattern]) -> list[dict]:
             new_line = int(m.group(1)) - 1 if m else 0
         elif raw.startswith("+") and not raw.startswith("+++"):
             new_line += 1
-            findings.extend(scan_line(raw[1:], current, new_line, allows))
+            for h in scan_line(raw[1:], current, new_line, allows):
+                if commit:
+                    h["commit"] = commit
+                findings.append(h)
         elif not raw.startswith("-"):
             new_line += 1
+    return findings
+
+
+def scan_history(repo: str, allows: list[re.Pattern], max_commits: int) -> list[dict]:
+    import subprocess
+    p = subprocess.run(
+        ["git", "-C", repo, "log", "-p", f"-n{max_commits}",
+         "--format=commit %H"],
+        capture_output=True, text=True)
+    if p.returncode != 0:
+        return []
+    findings = []
+    commit, diff_lines = "", []
+    for line in p.stdout.splitlines():
+        if line.startswith("commit "):
+            if diff_lines and commit:
+                findings.extend(scan_diff("\n".join(diff_lines), allows, commit[:10]))
+            commit = line.split()[1]
+            diff_lines = []
+        else:
+            diff_lines.append(line)
+    if diff_lines and commit:
+        findings.extend(scan_diff("\n".join(diff_lines), allows, commit[:10]))
     return findings
 
 
@@ -115,6 +147,10 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("files", nargs="*")
     ap.add_argument("--diff", action="store_true", help="read a unified diff from stdin")
+    ap.add_argument("--history", action="store_true",
+                    help="scan git commit history (use with --repo)")
+    ap.add_argument("--repo", default=".", help="repo for --history")
+    ap.add_argument("--max-commits", type=int, default=100)
     ap.add_argument("--allow", action="append", default=[], metavar="REGEX")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
@@ -125,7 +161,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"bad --allow regex: {exc}", file=sys.stderr)
         return 2
 
-    if args.diff:
+    if args.history:
+        findings = scan_history(args.repo, allows, args.max_commits)
+        if not findings and not Path(args.repo).joinpath(".git").exists():
+            print(f"not a git repository: {args.repo}", file=sys.stderr)
+            return 2
+    elif args.diff:
         findings = scan_diff(sys.stdin.read(), allows)
     elif args.files:
         findings = []
