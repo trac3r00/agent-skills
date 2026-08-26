@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Self-tests for both skills. Pure stdlib + pytest — no network, no secrets."""
+import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -369,3 +371,213 @@ def test_skill_decay_fail_on_never(tmp_path):
 def test_skill_decay_empty_inventory_is_error(tmp_path):
     rc, _, err = run(SD, "--skills-dir", str(tmp_path), "--stdin", stdin="whatever\n")
     assert rc == 2
+
+
+# ── skill-sync ────────────────────────────────────────────────────────────
+SS = ROOT / "skills" / "skill-sync" / "scripts" / "skill_sync.py"
+
+
+def _mk_skill(root, name, desc="a test skill", version="1.0.0"):
+    d = root / name
+    d.mkdir(parents=True)
+    (d / "SKILL.md").write_text(
+        f"---\nname: {name}\ndescription: {desc}\nversion: {version}\n---\n# {name}\n"
+    )
+    return d
+
+
+def test_skill_sync_list_discovers_and_dedupes(tmp_path):
+    a = tmp_path / "provider_a"
+    b = tmp_path / "provider_b"
+    _mk_skill(a, "alpha")
+    _mk_skill(a, "shared", desc="from a")
+    _mk_skill(b, "beta")
+    _mk_skill(b, "shared", desc="from b")
+    rc, out, _ = run(SS, "list", "--json", "--no-default-roots", "--root", str(a), "--root", str(b))
+    assert rc == 0
+    data = json.loads(out)
+    names = [s["name"] for s in data["skills"]]
+    assert names == ["alpha", "beta", "shared"]
+    shared = next(s for s in data["skills"] if s["name"] == "shared")
+    assert shared["description"] == "from a"
+    assert len(data["conflicts"]) == 1
+
+
+def test_skill_sync_fail_on_conflict_gate(tmp_path):
+    a = tmp_path / "a"
+    b = tmp_path / "b"
+    _mk_skill(a, "dup")
+    _mk_skill(b, "dup")
+    rc, _, _ = run(SS, "list", "--json", "--no-default-roots", "--root", str(a), "--root", str(b),
+                   "--fail-on-conflict")
+    assert rc == 1
+
+
+def test_skill_sync_sync_links_and_is_idempotent(tmp_path):
+    src = tmp_path / "src_root"
+    target = tmp_path / "universal"
+    _mk_skill(src, "linkme")
+    rc, out, _ = run(SS, "sync", "--json", "--no-default-roots", "--root", str(src), "--target", str(target))
+    assert rc == 0
+    dest = target / "linkme"
+    assert dest.is_symlink() and (dest / "SKILL.md").is_file()
+    rc, out, _ = run(SS, "sync", "--json", "--no-default-roots", "--root", str(src), "--target", str(target))
+    acts = {a["name"]: a["action"] for a in json.loads(out)["actions"]}
+    assert acts["linkme"] in ("up-to-date", "already-universal")
+
+
+def test_skill_sync_sync_copy_and_dry_run(tmp_path):
+    src = tmp_path / "src_root"
+    target = tmp_path / "universal"
+    _mk_skill(src, "copyme")
+    rc, out, _ = run(SS, "sync", "--json", "--dry-run", "--no-default-roots", "--root", str(src),
+                     "--target", str(target))
+    assert rc == 0 and not (target / "copyme").exists()
+    rc, _, _ = run(SS, "sync", "--json", "--copy", "--no-default-roots", "--root", str(src),
+                   "--target", str(target))
+    dest = target / "copyme"
+    assert dest.is_dir() and not dest.is_symlink()
+
+
+# ── comment-checker ───────────────────────────────────────────────────────
+CC2 = ROOT / "skills" / "comment-checker" / "scripts" / "comment_checker.py"
+
+
+def test_comment_checker_flags_and_passes(tmp_path):
+    f = tmp_path / "x.py"
+    f.write_text(
+        "#!/usr/bin/env python3\n"
+        "# noqa: E501\n"
+        "# given a user\n"
+        "# TODO: later\n"
+        "# this adds the numbers together\n"
+        "x = 1\n"
+    )
+    rc, out, _ = run(CC2, str(f), "--json")
+    assert rc == 0
+    data = json.loads(out)
+    assert data["count"] == 1
+    assert "adds the numbers" in data["flagged"][0]["text"]
+
+
+def test_comment_checker_diff_gate():
+    diff = (
+        "+++ b/a.ts\n"
+        "@@ -0,0 +1,2 @@\n"
+        "+// increment the counter\n"
+        "+let n = 0;\n"
+    )
+    rc, out, _ = run(CC2, "--diff", "--fail-over", "0", stdin=diff)
+    assert rc == 1
+    rc, _, _ = run(CC2, "--diff", "--fail-over", "5", stdin=diff)
+    assert rc == 0
+
+
+# ── repo-wide skill validation ────────────────────────────────────────────
+SKILLS_DIR = ROOT / "skills"
+FM_RE = re.compile(r"^---\n(.*?)\n---\n", re.S)
+
+
+def _skill_dirs():
+    return sorted(d for d in SKILLS_DIR.iterdir() if d.is_dir())
+
+
+def test_every_skill_has_valid_frontmatter():
+    problems = []
+    for d in _skill_dirs():
+        md = d / "SKILL.md"
+        if not md.is_file():
+            problems.append(f"{d.name}: missing SKILL.md")
+            continue
+        m = FM_RE.match(md.read_text(errors="replace"))
+        if not m:
+            problems.append(f"{d.name}: no frontmatter block")
+            continue
+        fm = m.group(1)
+        name = re.search(r"^name:\s*(\S+)", fm, re.M)
+        if not name:
+            problems.append(f"{d.name}: missing name field")
+        elif name.group(1) != d.name:
+            problems.append(f"{d.name}: name '{name.group(1)}' != dir")
+        if not re.search(r"^description:\s*\S", fm, re.M):
+            problems.append(f"{d.name}: missing description")
+    assert not problems, "\n".join(problems)
+
+
+def test_skill_descriptions_are_discoverable():
+    weak = []
+    for d in _skill_dirs():
+        m = FM_RE.match((d / "SKILL.md").read_text(errors="replace"))
+        desc = re.search(r"^description:\s*(.+(?:\n[ \t]+.+)*)", m.group(1), re.M)
+        text = re.sub(r"\s+", " ", desc.group(1)) if desc else ""
+        if len(text) < 40:
+            weak.append(f"{d.name}: description under 40 chars ({len(text)})")
+    assert not weak, "\n".join(weak)
+
+
+# ── session-handoff ───────────────────────────────────────────────────────
+SH = ROOT / "skills" / "session-handoff" / "scripts" / "session_handoff.py"
+
+
+def _mk_claude_session(claude_root, project, session_id, cwd, user_text, asst_text, file_path):
+    proj = claude_root / "projects" / project
+    proj.mkdir(parents=True)
+    lines = [
+        {"type": "user", "cwd": cwd, "timestamp": "2026-08-26T00:00:00Z",
+         "message": {"content": user_text}},
+        {"type": "assistant", "timestamp": "2026-08-26T00:00:05Z",
+         "message": {"content": [
+             {"type": "text", "text": asst_text},
+             {"type": "tool_use", "input": {"file_path": file_path}}]}},
+    ]
+    (proj / f"{session_id}.jsonl").write_text(
+        "\n".join(json.dumps(ln) for ln in lines))
+
+
+def _run_sh(tmp_home, *args):
+    import subprocess as sp
+    import os as _os
+    env = dict(_os.environ, HOME=str(tmp_home))
+    p = sp.run([sys.executable, str(SH), *args], capture_output=True, text=True, env=env)
+    return p.returncode, p.stdout, p.stderr
+
+
+def test_session_handoff_list_and_show(tmp_path):
+    _mk_claude_session(tmp_path / ".claude", "-tmp-proj", "abc123def456",
+                       "/tmp/proj", "please fix the login bug", "fixed it in auth.py",
+                       "/tmp/proj/auth.py")
+    rc, out, _ = _run_sh(tmp_path, "list", "--json", "--since", "30")
+    assert rc == 0
+    rows = json.loads(out)
+    assert rows and rows[0]["provider"] == "claude" and rows[0]["id"] == "abc123def456"
+    rc, out, _ = _run_sh(tmp_path, "show", "claude:abc123", "--json")
+    assert rc == 0
+    detail = json.loads(out)
+    assert detail["cwd"] == "/tmp/proj"
+    assert any("login bug" in t[1] for t in detail["turns"])
+    assert "/tmp/proj/auth.py" in detail["files"]
+
+
+def test_session_handoff_handoff_doc_and_cwd_filter(tmp_path):
+    _mk_claude_session(tmp_path / ".claude", "-tmp-proj", "aaa111",
+                       "/tmp/proj", "add rate limiting", "added limiter middleware",
+                       "/tmp/proj/mw.py")
+    _mk_claude_session(tmp_path / ".claude", "-tmp-other", "bbb222",
+                       "/tmp/other", "unrelated work", "did unrelated things",
+                       "/tmp/other/x.py")
+    rc, out, _ = _run_sh(tmp_path, "handoff", "--cwd", "/tmp/proj", "--since", "30")
+    assert rc == 0
+    assert "rate limiting" in out and "mw.py" in out
+    assert "unrelated" not in out
+    rc, _, err = _run_sh(tmp_path, "handoff", "--cwd", "/nonexistent-xyz", "--since", "30")
+    assert rc == 1 and "no sessions" in err
+
+
+def test_session_handoff_noise_filtered(tmp_path):
+    _mk_claude_session(tmp_path / ".claude", "-tmp-noisy", "ccc333",
+                       "/tmp/noisy", "<command-name>/model</command-name>", "real answer",
+                       "/tmp/noisy/f.py")
+    rc, out, _ = _run_sh(tmp_path, "show", "claude:ccc333", "--json")
+    assert rc == 0
+    detail = json.loads(out)
+    assert not any(t[0] == "user" for t in detail["turns"])
