@@ -7,7 +7,7 @@ Dependency-light Python tools for auditing AI-agent context, output, handoffs, r
 
 ## Overview
 
-Agent Skills is a collection of 49 [Agent Skills](https://agentskills.io) in five families:
+Agent Skills is a collection of 50 [Agent Skills](https://agentskills.io) in five families:
 
 - **Guards** — runnable audit skills (plus the interop CLIs), each combining an instruction file (`SKILL.md`) with a standalone Python CLI that produces human-readable or JSON output and can return a non-zero status when a configured threshold is exceeded. They run locally, accept files or standard input, and need no credentials or network access.
 - **Interop** — `skill-sync` unifies custom skills across every AI provider install into one universal directory, and `session-handoff` carries work context (session logs, history, files touched) between clients so any agent can continue work started in another.
@@ -84,6 +84,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | [`social-research`](skills/social-research/) | Read-only social content discovery via public APIs: X syndication, Reddit JSON, HN Firebase/Algolia, Bluesky AT Protocol. Threads limitation documented honestly. | — |
 | [`api-tester`](skills/api-tester/) | Fires real HTTP requests and validates status, JSON field values, and latency — endpoint smoke tests from CI or an agent session. | exit 1 on mismatch |
 | [`log-analyzer`](skills/log-analyzer/) | Groups log errors by normalized pattern and ranks offenders; handles level-tagged and exception-style logs. | `--budget-errors`, `--max-patterns` |
+| [`json-diff`](skills/json-diff/) | Semantic JSON diff by path: added/removed/changed with values, nested objects, positional arrays. | `--max-changes` |
 
 ### Creative skills
 
@@ -140,7 +141,7 @@ Claude Code / Codex / compatible Agent Skills host
             text or JSON output + exit status
 ```
 
-The plugin manifests in `.claude-plugin/` and `.codex-plugin/` expose the directories under `skills/`. Twenty-five skills are script-backed (guards, interop, security, backend, and domain CLIs); the rest are instruction-only — the `SKILL.md` is the skill. Every script is directly executable with Python and does not depend on an agent host.
+The plugin manifests in `.claude-plugin/` and `.codex-plugin/` expose the directories under `skills/`. Twenty-six skills are script-backed (guards, interop, security, backend, and domain CLIs); the rest are instruction-only — the `SKILL.md` is the skill. Every script is directly executable with Python and does not depend on an agent host.
 
 ## Installation
 
@@ -175,7 +176,7 @@ codex plugin marketplace add Trac3r00/agent-skills
 codex plugin add agent-skills@agent-skills
 ```
 
-The plugin installs all 49 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
+The plugin installs all 50 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
 
 ## Usage
 
@@ -266,7 +267,7 @@ To add a skill, follow the contributor contract in [`skills/AGENTS.md`](skills/A
 ├── .claude-plugin/       # Claude Code marketplace and plugin metadata
 ├── .codex-plugin/        # Codex plugin metadata
 ├── .github/workflows/    # CI: pytest matrix + CLI smoke tests
-├── skills/               # 49 skills: SKILL.md instructions, 25 with standalone Python CLIs
+├── skills/               # 50 skills: SKILL.md instructions, 26 with standalone Python CLIs
 ├── tests/test_skills.py  # End-to-end CLI tests + repo-wide frontmatter validation
 ├── LICENSE
 └── README.md

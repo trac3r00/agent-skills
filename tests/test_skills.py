@@ -1272,3 +1272,44 @@ def test_log_analyzer_level_filter(tmp_path):
     rc, out, _ = run(LA, str(f), "--level", "ERROR", "--json")
     data = json.loads(out)
     assert data["errors"] == 2 and data["warnings"] == 0
+
+
+# ── json-diff ─────────────────────────────────────────────────────────────
+JD = ROOT / "skills" / "json-diff" / "scripts" / "json_diff.py"
+
+
+def test_json_diff_path_changes(tmp_path):
+    a = tmp_path / "a.json"
+    b = tmp_path / "b.json"
+    a.write_text(json.dumps({"name": "svc", "port": 8080,
+                             "tags": ["a", "b"], "db": {"host": "x", "ssl": True}}))
+    b.write_text(json.dumps({"name": "svc", "port": 9090,
+                             "tags": ["a", "b", "c"], "db": {"host": "y"}}))
+    rc, out, _ = run(JD, str(a), str(b), "--json")
+    data = json.loads(out)
+    assert rc == 1
+    paths = {c["path"] for c in data["changes"]}
+    assert "port" in paths and "db.host" in paths and "db.ssl" in paths
+    kinds = {c["path"]: c["kind"] for c in data["changes"]}
+    assert kinds["port"] == "changed" and kinds["db.ssl"] == "removed"
+    assert any("tags" in p and kinds[p] == "changed" for p in paths)
+
+
+def test_json_diff_identical(tmp_path):
+    f1 = tmp_path / "x.json"
+    f2 = tmp_path / "y.json"
+    f1.write_text('{"a": [1, 2, {"b": 3}]}')
+    f2.write_text('{ "a": [1, 2, {"b": 3}] }')
+    rc, out, _ = run(JD, str(f1), str(f2), "--json")
+    assert rc == 0 and json.loads(out)["changes"] == []
+
+
+def test_json_diff_added_keys(tmp_path):
+    a = tmp_path / "a.json"
+    b = tmp_path / "b.json"
+    a.write_text('{"x": 1}')
+    b.write_text('{"x": 1, "y": {"z": [1]}}')
+    rc, out, _ = run(JD, str(a), str(b), "--json")
+    data = json.loads(out)
+    assert rc == 1
+    assert any(c["kind"] == "added" and c["path"] == "y" for c in data["changes"])

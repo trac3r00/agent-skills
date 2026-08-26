@@ -1,12 +1,13 @@
 {
   "version": "1.0.0",
-  "count": 49,
+  "count": 50,
   "families": {
     "backend": [
       "api-tester",
       "diff-review",
       "doc-reader",
       "env-gate",
+      "json-diff",
       "log-analyzer",
       "portfolio-audit",
       "resume-audit",
@@ -89,6 +90,7 @@
       "doc-reader",
       "env-gate",
       "git-master",
+      "json-diff",
       "log-analyzer",
       "lsp-setup",
       "portfolio-audit",
@@ -509,6 +511,25 @@
       ],
       "script_backed": false,
       "path": "skills/grilling"
+    },
+    {
+      "name": "json-diff",
+      "description": "Semantic diff between two JSON documents reported by JSON path \u2014 added, removed, changed with old/new values, recursing nested objects and comparing arrays positionally. Use when `diff` on JSON is useless (key reordering, formatting noise), for config drift checks, API response comparison, or CI gates on expected output.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "json",
+        "diff",
+        "config",
+        "testing",
+        "ci-gate"
+      ],
+      "family": "backend",
+      "personas": [
+        "backend"
+      ],
+      "script_backed": true,
+      "path": "skills/json-diff"
     },
     {
       "name": "linus-level",
