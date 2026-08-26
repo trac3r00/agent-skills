@@ -1,8 +1,9 @@
 {
   "version": "1.0.0",
-  "count": 47,
+  "count": 48,
   "families": {
     "backend": [
+      "api-tester",
       "diff-review",
       "doc-reader",
       "env-gate",
@@ -82,6 +83,7 @@
       "usage-audit"
     ],
     "backend": [
+      "api-tester",
       "diff-review",
       "doc-reader",
       "env-gate",
@@ -117,6 +119,7 @@
       "visual-qa"
     ],
     "devops": [
+      "api-tester",
       "diff-review",
       "env-gate",
       "git-master",
@@ -188,6 +191,26 @@
       ],
       "script_backed": false,
       "path": "skills/algorithmic-art"
+    },
+    {
+      "name": "api-tester",
+      "description": "Fires real HTTP requests and validates responses against expectations \u2014 status code, JSON field values (dot-notation paths), latency budget, content-type \u2014 with stdlib urllib, no requests library, no curl subprocess. Use to verify endpoints from CI or an agent session, smoke-test a deploy, or prove an API behaves as documented before building on it.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "api",
+        "http",
+        "testing",
+        "backend",
+        "ci-gate"
+      ],
+      "family": "backend",
+      "personas": [
+        "backend",
+        "devops"
+      ],
+      "script_backed": true,
+      "path": "skills/api-tester"
     },
     {
       "name": "apple-suite",

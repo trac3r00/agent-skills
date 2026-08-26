@@ -1182,3 +1182,54 @@ def test_appshot_missing_app(tmp_path):
                      str(tmp_path / "x.png"))
     assert rc == 1
     assert "not found" in err.lower() or "no window" in err.lower()
+
+
+# ── api-tester ────────────────────────────────────────────────────────────
+AT = ROOT / "skills" / "api-tester" / "scripts" / "api_tester.py"
+
+
+def test_api_tester_hits_endpoint(tmp_path):
+    import http.server, threading
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = b'{"ok": true, "count": 3}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(body)
+        def log_message(self, *a): pass
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{srv.server_port}/health"
+        rc, out, _ = run(AT, url, "--expect-status", "200",
+                         "--expect-json", "ok=true", "--json")
+        data = json.loads(out)
+        assert rc == 0
+        assert data["status"] == 200 and data["checks"]["status"] == "pass"
+        assert data["checks"]["json_fields"]["ok"] == "pass"
+    finally:
+        srv.shutdown()
+
+
+def test_api_tester_fails_on_wrong_status(tmp_path):
+    import http.server, threading
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(404)
+            self.end_headers()
+        def log_message(self, *a): pass
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{srv.server_port}/missing"
+        rc, out, _ = run(AT, url, "--expect-status", "200", "--json")
+        assert rc == 1
+        assert json.loads(out)["checks"]["status"] == "fail"
+    finally:
+        srv.shutdown()
+
+
+def test_api_tester_unreachable(tmp_path):
+    rc, _, err = run(AT, "http://127.0.0.1:1/nope", "--json")
+    assert rc == 2
