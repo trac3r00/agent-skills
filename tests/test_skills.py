@@ -1313,3 +1313,62 @@ def test_json_diff_added_keys(tmp_path):
     data = json.loads(out)
     assert rc == 1
     assert any(c["kind"] == "added" and c["path"] == "y" for c in data["changes"])
+
+
+# ── repo-audit ────────────────────────────────────────────────────────────
+RPA = ROOT / "skills" / "repo-audit" / "scripts" / "repo_audit.py"
+
+
+def _init_repo(path, files):
+    import subprocess as sp
+    path.mkdir(parents=True, exist_ok=True)
+    sp.run(["git", "init", "-q"], cwd=path, check=True)
+    for name, content in files.items():
+        f = path / name
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(content)
+    sp.run(["git", "add", "-A"], cwd=path, check=True)
+    import os as _os
+    env = dict(_os.environ, GIT_COMMITTER_DATE="2020-01-01T00:00:00Z",
+               GIT_AUTHOR_DATE="2020-01-01T00:00:00Z")
+    sp.run(["git", "-c", "user.email=t@t", "-c", "user.name=t",
+            "commit", "-qm", "init"], cwd=path, check=True, env=env)
+
+
+def test_repo_audit_flags_missing_essentials(tmp_path):
+    repo = tmp_path / "repo"
+    _init_repo(repo, {"main.py": "print(1)"})
+    rc, out, _ = run(RPA, str(repo), "--json")
+    data = json.loads(out)
+    assert rc == 1
+    checks = data["checks"]
+    assert checks["license"]["status"] == "fail"
+    assert checks["readme"]["status"] == "fail"
+    assert checks["tests"]["status"] == "fail"
+    assert checks["ci"]["status"] == "fail"
+
+
+def test_repo_audit_healthy_repo(tmp_path):
+    repo = tmp_path / "good"
+    _init_repo(repo, {
+        "README.md": "# hi", "LICENSE": "MIT",
+        "tests/test_x.py": "def test_x(): pass",
+        ".github/workflows/ci.yml": "name: ci",
+        ".gitignore": "*.pyc",
+    })
+    rc, out, _ = run(RPA, str(repo), "--json")
+    data = json.loads(out)
+    assert rc == 0
+    assert all(c["status"] in ("pass", "warn") for c in data["checks"].values())
+
+
+def test_repo_audit_large_files_and_stale_branch(tmp_path):
+    import subprocess as sp
+    repo = tmp_path / "big"
+    _init_repo(repo, {"README.md": "x", "LICENSE": "x", "tests/test_a.py": "def test_a(): pass",
+                      ".github/workflows/c.yml": "x", "big.bin": "0" * 6_000_000})
+    sp.run(["git", "branch", "stale-feature"], cwd=repo, check=True)
+    rc, out, _ = run(RPA, str(repo), "--json")
+    data = json.loads(out)
+    assert data["large_files"]
+    assert any(b["name"] == "stale-feature" for b in data["branches"])

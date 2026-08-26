@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "count": 50,
+  "count": 51,
   "families": {
     "backend": [
       "api-tester",
@@ -10,6 +10,7 @@
       "json-diff",
       "log-analyzer",
       "portfolio-audit",
+      "repo-audit",
       "resume-audit",
       "seo-audit"
     ],
@@ -129,6 +130,7 @@
       "git-master",
       "log-analyzer",
       "lsp-setup",
+      "repo-audit",
       "secret-gate"
     ],
     "finance": [
@@ -691,6 +693,25 @@
       ],
       "script_backed": false,
       "path": "skills/remove-ai-slops"
+    },
+    {
+      "name": "repo-audit",
+      "description": "Structural health check for a git repository \u2014 LICENSE, README, tests, CI config, .gitignore, large tracked files, and stale merged branches (idle beyond a configurable window). Offline, stdlib + git CLI, deterministic. Use when inheriting a repo, before open-sourcing, or as a periodic hygiene gate across many repos.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "git",
+        "repository",
+        "hygiene",
+        "ci-gate",
+        "maintenance"
+      ],
+      "family": "backend",
+      "personas": [
+        "devops"
+      ],
+      "script_backed": true,
+      "path": "skills/repo-audit"
     },
     {
       "name": "resume-audit",

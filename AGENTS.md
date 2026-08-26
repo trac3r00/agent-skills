@@ -5,7 +5,7 @@
 **Branch:** main
 
 ## OVERVIEW
-50 agent skills (SKILL.md standard) in five families; 26 are script-backed stdlib-only Python CLIs with exit-code gates, 22 are instruction-only. Installable as a Claude Code / Codex plugin or used from a clone by any SKILL.md-reading agent.
+51 agent skills (SKILL.md standard) in five families; 27 are script-backed stdlib-only Python CLIs with exit-code gates, 22 are instruction-only. Installable as a Claude Code / Codex plugin or used from a clone by any SKILL.md-reading agent.
 
 ## STRUCTURE
 ```
@@ -36,7 +36,7 @@ agent-skills/
 | `PROVIDER_ROOTS` | const | skills/skill-sync/scripts/skill_sync.py | priority-ordered skill dirs per provider |
 
 ## CONVENTIONS
-- CLI contract (all 26 script-backed skills): argparse, positional input or `-` stdin, `--json`, gates are strict `>` comparisons; rc 0 ok / 1 gate breach / 2 usage-or-input error.
+- CLI contract (all 27 script-backed skills): argparse, positional input or `-` stdin, `--json`, gates are strict `>` comparisons; rc 0 ok / 1 gate breach / 2 usage-or-input error.
 - Stdlib-only; sole exception: `context-budget` optionally uses `tiktoken` (chars/4 fallback).
 - Frontmatter: `name` (== dirname), `description`, `version`, `license` (with upstream attribution), `metadata.agentskills.tags`.
 - Ported skills keep upstream LICENSE.txt in-dir and a `license:` frontmatter line naming the source repo.
@@ -50,7 +50,7 @@ agent-skills/
 
 ## COMMANDS
 ```bash
-uvx pytest tests/ -q                 # full suite (90 tests)
+uvx pytest tests/ -q                 # full suite (93 tests)
 python3 skills/<s>/scripts/<s>.py --help
 ```
 
