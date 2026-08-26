@@ -1,7 +1,7 @@
 {
-  "name": "agent-guards",
-  "version": "1.3.0",
-  "description": "Runnable skills that return an exit code you can enforce — token budget audits, hallucination triage, cross-surface open-loop tracking, subscription cleanup, gate overlap analysis, and skill-decay usage audits.",
+  "name": "agent-skills",
+  "version": "2.2.0",
+  "description": "31 agent skills in six families: runnable exit-code guards (context-budget, claim-audit, open-loops, subscription-audit, gate-graph, skill-decay, comment-checker), interop (skill-sync, session-handoff), engineering process (systematic-debugging, test-driven-development, verification-before-completion, using-git-worktrees, blindspot, verify-ref, log-deviation, merge-quiz, grilling, domain-modeling, linus-level), power tools (git-master, ultimate-browsing, lsp-setup, remove-ai-slops, skill-creator, skill-optimizer), and creative/frontend (design, algorithmic-art, webapp-testing, css-pro-tips, nbj-write-clearly).",
   "author": {
     "name": "trac3r00",
     "url": "https://github.com/trac3r00"
@@ -10,25 +10,31 @@
   "repository": "https://github.com/trac3r00/agent-skills",
   "license": "MIT",
   "keywords": [
-    "context-budget",
-    "claim-audit",
-    "open-loops",
-    "subscription-audit",
-    "gate-graph",
-    "skill-decay",
-    "context-engineering",
-    "hallucination",
     "agent-memory",
-    "personal-finance",
     "ci-gate",
-    "token-budget"
+    "claim-audit",
+    "context-budget",
+    "context-engineering",
+    "debugging",
+    "gate-graph",
+    "hallucination",
+    "interop",
+    "open-loops",
+    "personal-finance",
+    "skill-decay",
+    "skill-sync",
+    "subscription-audit",
+    "tdd",
+    "token-budget",
+    "verification",
+    "worktrees"
   ],
   "skills": "./skills/",
   "authentication": "ON_USE",
   "interface": {
     "displayName": "Agent Guards",
     "shortDescription": "Exit-code skills: token, hallucination, open-loop, subscription, and gate overlap audits",
-    "longDescription": "Runnable skills for people running real AI agents — and their own budget. context-budget audits an agent's per-turn context window like a cost center and fails CI when the always-loaded context grows. claim-audit separates grounded, hedged, and bare factual claims so you catch the unverified assertions most likely to be hallucinations. open-loops extracts unresolved commitments, deferrals, and open questions from a transcript so cron jobs and triggers don't lose thread context. subscription-audit finds recurring charges hiding in a bank/card CSV, reports the true monthly and yearly cost, and flags forgotten ones. gate-graph computes AST overlap for validator and middleware gates so duplicate checks and dead gates can be cleaned up quickly. skill-decay cross-references a declared skill/tool inventory against real usage logs to surface never-used and stale capabilities that are quietly taxing every prompt. Dependency-light Python, exit-code gates — not prompt wrappers.",
+    "longDescription": "Runnable skills for people running real AI agents \u2014 and their own budget. context-budget audits an agent's per-turn context window like a cost center and fails CI when the always-loaded context grows. claim-audit separates grounded, hedged, and bare factual claims so you catch the unverified assertions most likely to be hallucinations. open-loops extracts unresolved commitments, deferrals, and open questions from a transcript so cron jobs and triggers don't lose thread context. subscription-audit finds recurring charges hiding in a bank/card CSV, reports the true monthly and yearly cost, and flags forgotten ones. gate-graph computes AST overlap for validator and middleware gates so duplicate checks and dead gates can be cleaned up quickly. skill-decay cross-references a declared skill/tool inventory against real usage logs to surface never-used and stale capabilities that are quietly taxing every prompt. Dependency-light Python, exit-code gates \u2014 not prompt wrappers.",
     "developerName": "trac3r00",
     "category": "Productivity",
     "capabilities": [
