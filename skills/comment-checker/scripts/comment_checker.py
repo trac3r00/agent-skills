@@ -141,6 +141,10 @@ def main(argv: list[str] | None = None) -> int:
     elif args.files:
         flagged = []
         for f in args.files:
+            if f == "-":
+                for i, line in enumerate(sys.stdin.read().splitlines(), 1):
+                    flagged.extend(scan_text(line, "py", "<stdin>", i - 1))
+                continue
             p = Path(f)
             lang = EXT_TO_LANG.get(p.suffix, "")
             if lang and p.is_file():

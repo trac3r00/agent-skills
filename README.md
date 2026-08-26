@@ -7,7 +7,7 @@ Dependency-light Python tools for auditing AI-agent context, output, handoffs, r
 
 ## Overview
 
-Agent Skills is a collection of 34 [Agent Skills](https://agentskills.io) in five families:
+Agent Skills is a collection of 47 [Agent Skills](https://agentskills.io) in five families:
 
 - **Guards** — runnable audit skills (plus the interop CLIs), each combining an instruction file (`SKILL.md`) with a standalone Python CLI that produces human-readable or JSON output and can return a non-zero status when a configured threshold is exceeded. They run locally, accept files or standard input, and need no credentials or network access.
 - **Interop** — `skill-sync` unifies custom skills across every AI provider install into one universal directory, and `session-handoff` carries work context (session logs, history, files touched) between clients so any agent can continue work started in another.
@@ -34,6 +34,17 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | **Research behind blocked pages** | WAFs, JS-only rendering, and platform walls stop naive fetching | [`ultimate-browsing`](skills/ultimate-browsing/) |
 | **Security-sensitive repos** | Agents paste real credentials into examples; installed skills carry injection payloads | [`secret-gate`](skills/secret-gate/), [`skill-audit`](skills/skill-audit/) |
 | **Token cost control** | No client shows cross-client consumption; budgets blow silently | [`usage-audit`](skills/usage-audit/), [`context-budget`](skills/context-budget/) |
+| **Backend / deployment** | New env keys never make it to prod; the deploy crashes at 2am | [`env-gate`](skills/env-gate/) |
+| **Code review triage** | Reviewers waste time on debug prints, TODOs, and trivial assertions that a machine should catch first | [`diff-review`](skills/diff-review/), [`comment-checker`](skills/comment-checker/), [`merge-quiz`](skills/merge-quiz/) |
+| **Finance / portfolio** | A brokerage export tells you what you own, not whether one position is too big | [`portfolio-audit`](skills/portfolio-audit/) |
+| **Documents** | Agents can't read docx/pptx/xlsx without installing heavy tooling | [`doc-reader`](skills/doc-reader/) |
+| **Web / SEO** | Pages ship without title, meta description, or alt text — invisible to search and share | [`seo-audit`](skills/seo-audit/) |
+| **Career / job search** | Resumes get filtered by ATS before a human reads them; weak bullets and missing keywords are invisible to the writer | [`resume-audit`](skills/resume-audit/) |
+| **Project onboarding** | Every project has "the agent did X wrong, we told it Y" moments that future sessions repeat | [`session-rules`](skills/session-rules/) |
+| **macOS automation** | Agents can't touch the user's Notes, Reminders, Maps, Mail, Calendar, Contacts, Photos, or run Terminal commands without an API layer | [`apple-suite`](skills/apple-suite/) |
+| **UI / visual delivery** | Functional tests pass while the layout is broken, the font is wrong, or the CJK glyphs are corrupted | [`visual-qa`](skills/visual-qa/), [`webapp-testing`](skills/webapp-testing/), [`appshot`](skills/appshot/) |
+| **Agent administration** | Multiple agent clients run at once; nobody knows which are alive, stuck, or killable | [`session-finder`](skills/session-finder/), [`session-handoff`](skills/session-handoff/), [`usage-audit`](skills/usage-audit/) |
+| **Social research** | Social content is behind logins and JS walls; public APIs go unused | [`social-research`](skills/social-research/), [`ultimate-browsing`](skills/ultimate-browsing/) |
 | **Personal ops** | Forgotten subscriptions keep billing | [`subscription-audit`](skills/subscription-audit/) |
 | **Maintaining a skill library itself** | Redundant gates, dead skills, bloated instructions tax every prompt | [`gate-graph`](skills/gate-graph/), [`skill-creator`](skills/skill-creator/), [`skill-optimizer`](skills/skill-optimizer/) |
 
@@ -53,6 +64,24 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | [`secret-gate`](skills/secret-gate/) | Blocks credentials from entering code or diffs: AWS/GitHub/API key formats, private keys, JWTs, and high-entropy assigned strings. | exit 1 on findings |
 | [`skill-audit`](skills/skill-audit/) | Security-scans installed skills for prompt-injection, data-exfiltration, and pipe-to-shell patterns before an agent trusts them. | `--fail-over` |
 | [`usage-audit`](skills/usage-audit/) | Aggregates token consumption across Claude Code, Codex, and OpenCode stores by model, client, and project. | `--budget-tokens` |
+| [`env-gate`](skills/env-gate/) | Compares a deployed .env against .env.example: missing/empty/extra keys and placeholder values. Prevents the classic prod crash from env drift. | exit 1 on drift |
+| [`diff-review`](skills/diff-review/) | Mechanical review pass on a diff: debug output, unresolved markers, trivial assertions, deleted tests. Chains secret-gate and comment-checker into one command. | `--fail-over` |
+
+### Domain skills
+
+| Skill | Purpose | Optional gate |
+| --- | --- | --- |
+| [`portfolio-audit`](skills/portfolio-audit/) | Analyzes an exported portfolio CSV for concentration risk, allocation drift, and gain/loss across stocks, crypto, ETFs, and any asset type. | `--max-position`, `--max-type` |
+| [`doc-reader`](skills/doc-reader/) | Extracts text from docx, pptx, xlsx, html, markdown, and txt with zero dependencies (ZIP+XML stdlib). PDF delegates to pdftotext. | — |
+| [`seo-audit`](skills/seo-audit/) | Scores on-page SEO for HTML files: title, meta description, h1, image alt, canonical, OG tags, html lang. | `--min-score` |
+| [`resume-audit`](skills/resume-audit/) | Scores resume structure, quantified bullets, action verbs, and ATS keyword coverage against a job description. | `--min-bullet-ratio` |
+| [`session-rules`](skills/session-rules/) | Extracts corrections from a project's AI-session history and generates a RULE.md to prevent repeated mistakes. | — |
+| [`apple-suite`](skills/apple-suite/) | Drives 11 macOS apps via AppleScript and URL schemes: Notes, Reminders, Maps, Mail, Calendar, Terminal, Shortcuts, Contacts, Photos, App Store search, Phone. Non-scriptable apps (VoiceMemos, Passwords, Find My, Activity Monitor) documented honestly. | — |
+| [`visual-qa`](skills/visual-qa/) | Visual QA workflow: capture through real renderers, compare against baselines, structured good/bad verdict with evidence. | — |
+| [`skill-picker`](skills/skill-picker/) | Queries the generated catalogue by persona, family, keyword, or tag to find the right skills for a workload, with install commands. | — |
+| [`session-finder`](skills/session-finder/) | Detects running AI agent processes (Claude Code, Codex, OMO, gjc, Hermes, Cursor, Gemini) with client grouping, uptime, watch mode, and validated safe-kill. | — |
+| [`appshot`](skills/appshot/) | Screenshots any macOS app window, full screen, or region via native screencapture — zero dependencies. | — |
+| [`social-research`](skills/social-research/) | Read-only social content discovery via public APIs: X syndication, Reddit JSON, HN Firebase/Algolia, Bluesky AT Protocol. Threads limitation documented honestly. | — |
 
 ### Creative skills
 
@@ -109,7 +138,7 @@ Claude Code / Codex / compatible Agent Skills host
             text or JSON output + exit status
 ```
 
-The plugin manifests in `.claude-plugin/` and `.codex-plugin/` expose the directories under `skills/`. Twelve skills are script-backed (guards, interop, and security CLIs); the rest are instruction-only — the `SKILL.md` is the skill. Every script is directly executable with Python and does not depend on an agent host.
+The plugin manifests in `.claude-plugin/` and `.codex-plugin/` expose the directories under `skills/`. Twenty-three skills are script-backed (guards, interop, security, backend, and domain CLIs); the rest are instruction-only — the `SKILL.md` is the skill. Every script is directly executable with Python and does not depend on an agent host.
 
 ## Installation
 
@@ -144,7 +173,7 @@ codex plugin marketplace add Trac3r00/agent-skills
 codex plugin add agent-skills@agent-skills
 ```
 
-The plugin installs all 34 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
+The plugin installs all 47 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
 
 ## Usage
 
@@ -235,7 +264,7 @@ To add a skill, follow the contributor contract in [`skills/AGENTS.md`](skills/A
 ├── .claude-plugin/       # Claude Code marketplace and plugin metadata
 ├── .codex-plugin/        # Codex plugin metadata
 ├── .github/workflows/    # CI: pytest matrix + CLI smoke tests
-├── skills/               # 34 skills: SKILL.md instructions, 12 with standalone Python CLIs
+├── skills/               # 47 skills: SKILL.md instructions, 23 with standalone Python CLIs
 ├── tests/test_skills.py  # End-to-end CLI tests + repo-wide frontmatter validation
 ├── LICENSE
 └── README.md

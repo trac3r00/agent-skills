@@ -130,6 +130,10 @@ def main(argv: list[str] | None = None) -> int:
     elif args.files:
         findings = []
         for f in args.files:
+            if f == "-":
+                for i, line in enumerate(sys.stdin.read().splitlines(), 1):
+                    findings.extend(scan_line(line, "<stdin>", i, allows))
+                continue
             p = Path(f)
             if p.is_dir():
                 for sub in sorted(p.rglob("*")):

@@ -1,15 +1,15 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "agent-skills",
-  "description": "34 agent skills in six families: runnable exit-code guards (context-budget, claim-audit, open-loops, subscription-audit, gate-graph, skill-decay, comment-checker), interop (skill-sync, session-handoff), security (secret-gate, skill-audit, usage-audit), engineering process (systematic-debugging, test-driven-development, verification-before-completion, using-git-worktrees, blindspot, verify-ref, log-deviation, merge-quiz, grilling, domain-modeling, linus-level), power tools (git-master, ultimate-browsing, lsp-setup, remove-ai-slops, skill-creator, skill-optimizer), and creative/frontend (design, algorithmic-art, webapp-testing, css-pro-tips, nbj-write-clearly).",
+  "description": "43 agent skills in six families: runnable exit-code guards (context-budget, claim-audit, open-loops, subscription-audit, gate-graph, skill-decay, comment-checker), interop (skill-sync, session-handoff), security (secret-gate, skill-audit, usage-audit), backend/deploy (env-gate, diff-review), domains (portfolio-audit, doc-reader, seo-audit, resume-audit, session-rules, apple-suite, visual-qa), engineering process (systematic-debugging, test-driven-development, verification-before-completion, using-git-worktrees, blindspot, verify-ref, log-deviation, merge-quiz, grilling, domain-modeling, linus-level), power tools (git-master, ultimate-browsing, lsp-setup, remove-ai-slops, skill-creator, skill-optimizer), and creative/frontend (design, algorithmic-art, webapp-testing, css-pro-tips, nbj-write-clearly).",
   "owner": {
     "name": "trac3r00"
   },
   "plugins": [
     {
       "name": "agent-skills",
-      "description": "34 agent skills in six families: runnable exit-code guards (context-budget, claim-audit, open-loops, subscription-audit, gate-graph, skill-decay, comment-checker), interop (skill-sync, session-handoff), security (secret-gate, skill-audit, usage-audit), engineering process (systematic-debugging, test-driven-development, verification-before-completion, using-git-worktrees, blindspot, verify-ref, log-deviation, merge-quiz, grilling, domain-modeling, linus-level), power tools (git-master, ultimate-browsing, lsp-setup, remove-ai-slops, skill-creator, skill-optimizer), and creative/frontend (design, algorithmic-art, webapp-testing, css-pro-tips, nbj-write-clearly).",
-      "version": "2.3.0",
+      "description": "43 agent skills in six families: runnable exit-code guards (context-budget, claim-audit, open-loops, subscription-audit, gate-graph, skill-decay, comment-checker), interop (skill-sync, session-handoff), security (secret-gate, skill-audit, usage-audit), backend/deploy (env-gate, diff-review), domains (portfolio-audit, doc-reader, seo-audit, resume-audit, session-rules, apple-suite, visual-qa), engineering process (systematic-debugging, test-driven-development, verification-before-completion, using-git-worktrees, blindspot, verify-ref, log-deviation, merge-quiz, grilling, domain-modeling, linus-level), power tools (git-master, ultimate-browsing, lsp-setup, remove-ai-slops, skill-creator, skill-optimizer), and creative/frontend (design, algorithmic-art, webapp-testing, css-pro-tips, nbj-write-clearly).",
+      "version": "2.5.0",
       "author": {
         "name": "trac3r00"
       },
@@ -18,10 +18,17 @@
       "homepage": "https://github.com/trac3r00/agent-skills",
       "tags": [
         "agent-memory",
+        "apple",
+        "backend",
         "ci-gate",
+        "code-review",
         "context-engineering",
         "debugging",
+        "deploy",
         "design",
+        "documents",
+        "env",
+        "finance",
         "gate-graph",
         "generative-art",
         "hallucination",
@@ -29,16 +36,19 @@
         "personal-finance",
         "playwright",
         "process",
+        "resume",
         "secrets",
         "security",
+        "seo",
         "skill-decay",
         "skill-sync",
         "tdd",
         "testing",
         "token-budget",
-        "usage"
+        "usage",
+        "visual-qa"
       ]
     }
   ],
-  "version": "2.3.0"
+  "version": "2.5.0"
 }

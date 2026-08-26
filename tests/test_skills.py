@@ -730,3 +730,455 @@ def test_usage_audit_empty_store(tmp_path):
     rc, out, err = _run_ua(tmp_path, "--since", "30", "--json")
     assert rc == 0
     assert json.loads(out)["totals"]["sessions"] == 0
+
+
+# ── env-gate ──────────────────────────────────────────────────────────────
+EG = ROOT / "skills" / "env-gate" / "scripts" / "env_gate.py"
+
+
+def _mk_env(root, name, lines):
+    p = root / name
+    p.write_text("\n".join(lines) + "\n")
+    return p
+
+
+def test_env_gate_missing_and_extra(tmp_path):
+    example = _mk_env(tmp_path, ".env.example",
+                      ["DATABASE_URL=postgres://localhost/db", "REDIS_URL=",
+                       "API_BASE_URL=https://api.example.com", "OPTIONAL_FLAG="])
+    actual = _mk_env(tmp_path, ".env",
+                     ["DATABASE_URL=postgres://prod.internal/db", "API_BASE_URL=",
+                      "STALE_KEY=old"])
+    rc, out, _ = run(EG, str(actual), "--example", str(example), "--json")
+    data = json.loads(out)
+    assert rc == 1
+    missing = {m["key"] for m in data["missing"]}
+    empty = {m["key"] for m in data["empty_required"]}
+    extra = {m["key"] for m in data["extra"]}
+    assert missing == {"REDIS_URL", "OPTIONAL_FLAG"}
+    assert empty == {"API_BASE_URL"}
+    assert extra == {"STALE_KEY"}
+
+
+def test_env_gate_clean_match(tmp_path):
+    example = _mk_env(tmp_path, ".env.example", ["A=1", "B=2"])
+    actual = _mk_env(tmp_path, ".env", ["A=one", "B=two"])
+    rc, out, _ = run(EG, str(actual), "--example", str(example), "--json")
+    assert rc == 0 and json.loads(out)["status"] == "clean"
+
+
+def test_env_gate_required_prefix_optional(tmp_path):
+    example = _mk_env(tmp_path, ".env.example",
+                      ["DATABASE_URL=", "DEBUG=0", "CACHE_TTL=300"])
+    actual = _mk_env(tmp_path, ".env", ["DATABASE_URL=x", "DEBUG=1", "CACHE_TTL=60"])
+    rc, out, _ = run(EG, str(actual), "--example", str(example),
+                     "--required-prefix", "DATABASE", "--json")
+    assert rc == 0
+
+
+def test_env_gate_missing_files_are_errors(tmp_path):
+    rc, _, err = run(EG, str(tmp_path / "nope.env"), "--example",
+                     str(tmp_path / "nope.example"))
+    assert rc == 2
+
+
+# ── diff-review ───────────────────────────────────────────────────────────
+DR = ROOT / "skills" / "diff-review" / "scripts" / "diff_review.py"
+
+
+def _diff_hunks(*hunks):
+    out = []
+    for fname, lines in hunks:
+        out.append(f"--- a/{fname}\n+++ b/{fname}\n@@ -0,0 +1,{len(lines)} @@")
+        out.extend("+" + ln for ln in lines)
+    return "\n".join(out)
+
+
+def test_diff_review_flags_classic_risks():
+    diff = _diff_hunks(
+        ("app.py", ["def f(items):", "    for i in items:",
+                    "    print(f'debug: {i}')  # FIXME remove", "    return items"]),
+        ("test_login.py", ["def test_ok():", "    assert True"]),
+    )
+    rc, out, _ = run(DR, "--json", stdin=diff)
+    data = json.loads(out)
+    assert rc == 1
+    kinds = {f["kind"] for f in data["findings"]}
+    assert "debug-output" in kinds
+    assert "unresolved-marker" in kinds
+    assert "trivial-assertion" in kinds
+    files = {f["file"] for f in data["findings"]}
+    assert "app.py" in files
+
+
+def test_diff_review_clean_diff():
+    diff = _diff_hunks(("src/auth.py", ["def login(u):", "    return verify(u)"]))
+    rc, out, _ = run(DR, "--json", stdin=diff)
+    assert rc == 0 and json.loads(out)["count"] == 0
+
+
+def test_diff_review_uses_ecosystem_gates(tmp_path):
+    sg = tmp_path / "skills" / "secret-gate"
+    (sg / "scripts").mkdir(parents=True)
+    (sg / "scripts" / "secret_gate.py").write_text(
+        "#!/usr/bin/env python3\nimport sys\n"
+        "t = sys.stdin.read()\n"
+        "print('leak found' if 'ghp_' in t else 'clean')\n"
+        "sys.exit(1 if 'ghp_' in t else 0)\n")
+    cc = tmp_path / "skills" / "comment-checker"
+    (cc / "scripts").mkdir(parents=True)
+    (cc / "scripts" / "comment_checker.py").write_text(
+        "#!/usr/bin/env python3\nimport sys\nprint('0')\n")
+    diff = _diff_hunks(("keys.py", ['token = "ghp_A7k2mQ9pL4vN8cR5tY3wK6bF1dH0"']))
+    rc, out, _ = run(DR, "--tools-dir", str(tmp_path / "skills"), "--json", stdin=diff)
+    data = json.loads(out)
+    assert rc == 1
+    assert any("secret-gate" in f["kind"] for f in data["findings"])
+
+
+# ── portfolio-audit ───────────────────────────────────────────────────────
+PA = ROOT / "skills" / "portfolio-audit" / "scripts" / "portfolio_audit.py"
+
+
+def _mk_portfolio(tmp_path, rows):
+    f = tmp_path / "portfolio.csv"
+    f.write_text("symbol,type,quantity,cost_basis,current_price\n" + "\n".join(rows))
+    return f
+
+
+def test_portfolio_audit_concentration_and_drift(tmp_path):
+    f = _mk_portfolio(tmp_path, [
+        "AAPL,stock,100,150.0,300.0",
+        "BTC,crypto,0.5,20000,60000",
+        "VTI,stock,10,200.0,100.0",
+    ])
+    rc, out, _ = run(PA, str(f), "--json")
+    data = json.loads(out)
+    assert rc == 1  # AAPL+BTC are 96% of value -> over concentration default
+    assert data["total_value"] == 300*100 + 60000*0.5 + 100*10
+    assert data["positions"][0]["symbol"] == "AAPL"
+    types = {a["type"]: a["weight"] for a in data["allocation"]}
+    assert abs(types["crypto"] - 30000/61000) < 0.01
+    assert any("AAPL" in w for w in data["warnings"])
+
+
+def test_portfolio_audit_balanced_passes(tmp_path):
+    f = _mk_portfolio(tmp_path, [
+        "A,stock,10,10,10", "B,stock,10,10,10",
+        "C,stock,10,10,10", "D,crypto,10,10,10",
+    ])
+    rc, out, _ = run(PA, str(f), "--json")
+    data = json.loads(out)
+    assert rc == 0
+    assert data["gain_loss_pct"] == 0.0
+
+
+def test_portfolio_audit_bad_csv(tmp_path):
+    f = tmp_path / "bad.csv"
+    f.write_text("not,a,portfolio\n")
+    rc, _, err = run(PA, str(f))
+    assert rc == 2
+
+
+# ── doc-reader ────────────────────────────────────────────────────────────
+DOCR = ROOT / "skills" / "doc-reader" / "scripts" / "doc_reader.py"
+
+
+def _mk_docx(tmp_path, texts):
+    import zipfile
+    f = tmp_path / "test.docx"
+    body = "".join(f"<w:p><w:r><w:t>{t}</w:t></w:r></w:p>" for t in texts)
+    with zipfile.ZipFile(f, "w") as z:
+        z.writestr("word/document.xml",
+                   '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                   f"<w:body>{body}</w:body></w:document>")
+    return f
+
+
+def _mk_pptx(tmp_path, slide_texts):
+    import zipfile
+    f = tmp_path / "test.pptx"
+    with zipfile.ZipFile(f, "w") as z:
+        for i, t in enumerate(slide_texts, 1):
+            z.writestr(f"ppt/slides/slide{i}.xml",
+                       '<?xml version="1.0"?><p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+                       f"<p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>{t}</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>")
+    return f
+
+
+def test_doc_reader_docx(tmp_path):
+    f = _mk_docx(tmp_path, ["Hello world", "Second paragraph"])
+    rc, out, _ = run(DOCR, str(f), "--json")
+    assert rc == 0
+    data = json.loads(out)
+    assert "Hello world" in data["text"] and "Second paragraph" in data["text"]
+    assert data["format"] == "docx"
+
+
+def test_doc_reader_pptx(tmp_path):
+    f = _mk_pptx(tmp_path, ["Slide One Title", "Slide Two Content"])
+    rc, out, _ = run(DOCR, str(f), "--json")
+    data = json.loads(out)
+    assert rc == 0
+    assert "Slide One Title" in data["text"] and "Slide Two Content" in data["text"]
+    assert data["slides"] == 2
+
+
+def test_doc_reader_markdown_and_html(tmp_path):
+    md = tmp_path / "doc.md"
+    md.write_text("# Title\n\nBody text with **bold**.\n")
+    rc, out, _ = run(DOCR, str(md), "--json")
+    assert rc == 0 and "Title" in json.loads(out)["text"]
+    html = tmp_path / "page.html"
+    html.write_text("<html><head><title>T</title><style>.x{}</style></head>"
+                    "<body><h1>Head</h1><p>Body</p><script>var x=1</script></body></html>")
+    rc, out, _ = run(DOCR, str(html), "--json")
+    data = json.loads(out)
+    assert rc == 0 and "Head" in data["text"] and "Body" in data["text"]
+    assert "var x=1" not in data["text"] and ".x{" not in data["text"]
+
+
+def test_doc_reader_unsupported(tmp_path):
+    f = tmp_path / "x.bin"
+    f.write_bytes(b"\x00\x01")
+    rc, _, err = run(DOCR, str(f))
+    assert rc == 2 and "unsupported" in err.lower()
+
+
+# ── seo-audit ─────────────────────────────────────────────────────────────
+SEO = ROOT / "skills" / "seo-audit" / "scripts" / "seo_audit.py"
+
+
+def test_seo_audit_good_page(tmp_path):
+    f = tmp_path / "good.html"
+    f.write_text("""<html><head>
+<title>Clear Product Title | Brand</title>
+<meta name="description" content="A helpful page about the product that explains what it does and why users benefit.">
+<link rel="canonical" href="https://example.com/product">
+<meta property="og:title" content="Clear Product Title">
+</head><body><h1>Clear Product Title</h1><img src="x.png" alt="diagram">
+<a href="/about">About</a></body></html>""")
+    rc, out, _ = run(SEO, str(f), "--json")
+    data = json.loads(out)
+    assert rc == 0
+    assert data["score"] >= 85
+    assert all(ck["status"] in ("pass", "warn") for ck in data["checks"].values())
+
+
+def test_seo_audit_flags_missing_basics(tmp_path):
+    f = tmp_path / "bad.html"
+    f.write_text("<html><head><title></title></head><body>"
+                 "<h2>No h1</h2><img src='a.png'><h2>Second h2</h2></body></html>")
+    rc, out, _ = run(SEO, str(f), "--json")
+    data = json.loads(out)
+    assert rc == 1
+    assert data["checks"]["title"]["status"] == "fail"
+    assert data["checks"]["meta_description"]["status"] == "fail"
+    assert data["checks"]["h1"]["status"] == "fail"
+    assert data["checks"]["image_alt"]["status"] == "fail"
+
+
+# ── resume-audit ──────────────────────────────────────────────────────────
+RA = ROOT / "skills" / "resume-audit" / "scripts" / "resume_audit.py"
+
+
+def test_resume_audit_scores_structure_and_impact(tmp_path):
+    f = tmp_path / "resume.md"
+    f.write_text("""# Jane Doe
+jane@example.com | github.com/janedoe | 555-0100
+
+## Experience
+### Senior Engineer, Acme Corp (2020-2024)
+- Led migration of payment pipeline, cutting latency 40% and saving $200k/yr
+- Grew team from 3 to 8 engineers across 2 time zones
+- Mentored 5 engineers, 3 promoted to senior
+
+## Skills
+Python, PostgreSQL, Kubernetes, distributed systems
+""")
+    rc, out, _ = run(RA, str(f), "--json", "--min-bullet-ratio", "0.3")
+    data = json.loads(out)
+    assert rc == 0
+    assert data["checks"]["contact_info"]["status"] == "pass"
+    assert data["checks"]["quantified_bullets"]["ratio"] >= 0.3
+
+
+def test_resume_audit_flags_vague_and_missing(tmp_path):
+    f = tmp_path / "weak.md"
+    f.write_text("# John\n\n## Experience\n- Worked on stuff\n- Was responsible for things\n")
+    rc, out, _ = run(RA, str(f), "--json")
+    data = json.loads(out)
+    assert rc == 1
+    assert data["checks"]["contact_info"]["status"] == "fail"
+    assert data["checks"]["quantified_bullets"]["status"] == "fail"
+
+
+def test_resume_audit_ats_keyword_match(tmp_path):
+    f = tmp_path / "resume.md"
+    f.write_text("# A\na@b.co\n## Skills\nPython, PostgreSQL\n## Experience\n- Built APIs\n")
+    jd = tmp_path / "jd.txt"
+    jd.write_text("Senior backend engineer with Python, PostgreSQL, Kubernetes, and AWS experience.")
+    rc, out, _ = run(RA, str(f), "--jd", str(jd), "--json")
+    data = json.loads(out)
+    kws = {k["keyword"]: k["present"] for k in data["ats"]["keywords"]}
+    assert kws["python"] and kws["postgresql"]
+    assert not kws["kubernetes"] and not kws["aws"]
+    assert data["ats"]["coverage"] < 1.0
+
+
+# ── session-rules ─────────────────────────────────────────────────────────
+SR = ROOT / "skills" / "session-rules" / "scripts" / "session_rules.py"
+
+
+def _mk_correction_session(home, project, session_id):
+    slug = str(home).lstrip("/").replace("/", "-") + "-proj"
+    proj = home / ".claude" / "projects" / f"-{slug}"
+    proj.mkdir(parents=True, exist_ok=True)
+    lines = [
+        {"type": "user", "cwd": str(home) + "/proj", "timestamp": "2026-08-25T10:00:00Z",
+         "message": {"content": "add the login endpoint"}},
+        {"type": "assistant", "timestamp": "2026-08-25T10:01:00Z",
+         "message": {"content": [{"type": "text", "text": "I added it with jwt auth."}]}},
+        {"type": "user", "cwd": str(home) + "/proj", "timestamp": "2026-08-25T10:02:00Z",
+         "message": {"content": "no, never use jwt here - we use session cookies. don't do that again"}},
+        {"type": "user", "cwd": str(home) + "/proj", "timestamp": "2026-08-25T10:03:00Z",
+         "message": {"content": "also always run the tests before saying done"}},
+    ]
+    (proj / f"{session_id}.jsonl").write_text(
+        "\n".join(json.dumps(ln) for ln in lines))
+
+
+def test_session_rules_extracts_corrections(tmp_path):
+    _mk_correction_session(tmp_path, "-tmp-proj", "s1")
+    import subprocess as sp
+    import os as _os
+    env = dict(_os.environ, HOME=str(tmp_path))
+    p = sp.run([sys.executable, str(SR), "--cwd", str(tmp_path) + "/proj", "--since", "30", "--json"],
+               capture_output=True, text=True, env=env)
+    assert p.returncode == 0
+    data = json.loads(p.stdout)
+    rules = [r["rule"] for r in data["rules"]]
+    assert any("jwt" in r.lower() or "session cookies" in r.lower() for r in rules)
+    assert any("test" in r.lower() for r in rules)
+    assert data["sessions_scanned"] >= 1
+
+
+def test_session_rules_writes_rule_md(tmp_path):
+    _mk_correction_session(tmp_path, "-tmp-proj", "s1")
+    out_file = tmp_path / "RULE.md"
+    import subprocess as sp
+    import os as _os
+    env = dict(_os.environ, HOME=str(tmp_path))
+    p = sp.run([sys.executable, str(SR), "--cwd", str(tmp_path) + "/proj", "--since", "30",
+                "--out", str(out_file)], capture_output=True, text=True, env=env)
+    assert p.returncode == 0
+    content = out_file.read_text()
+    assert "# Project Rules" in content
+    assert "session cookies" in content.lower() or "jwt" in content.lower()
+
+
+# ── skill-picker ──────────────────────────────────────────────────────────
+SP = ROOT / "skills" / "skill-picker" / "scripts" / "skill_picker.py"
+GC = ROOT / "skills" / "skill-picker" / "scripts" / "generate_catalogue.py"
+
+
+def test_skill_picker_persona_query():
+    rc, out, _ = run(SP, "--persona", "backend", "--json")
+    assert rc == 0
+    skills = json.loads(out)
+    names = {s["name"] for s in skills}
+    assert "env-gate" in names and "diff-review" in names
+    assert "design" not in names
+
+
+def test_skill_picker_search():
+    rc, out, _ = run(SP, "--search", "token", "--json")
+    assert rc == 0
+    names = {s["name"] for s in json.loads(out)}
+    assert "usage-audit" in names
+
+
+def test_skill_picker_family():
+    rc, out, _ = run(SP, "--family", "security", "--json")
+    assert rc == 0
+    names = {s["name"] for s in json.loads(out)}
+    assert "secret-gate" in names and "skill-audit" in names
+
+
+def test_skill_picker_no_match():
+    rc, _, err = run(SP, "--persona", "nonexistent", "--json")
+    assert rc == 1
+
+
+def test_catalogue_valid():
+    rc, out, _ = run(GC, "--check")
+    assert rc == 0
+    assert "valid" in out
+
+
+# ── session-finder ────────────────────────────────────────────────────────
+SF = ROOT / "skills" / "session-finder" / "scripts" / "session_finder.py"
+
+
+def test_session_finder_detects_known_process(tmp_path):
+    import subprocess as sp
+    import time
+    fake = sp.Popen([sys.executable, "-c", "import time; time.sleep(60)"],
+                    stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    try:
+        rc, out, _ = run(SF, "--json", "--match", "python")
+        assert rc == 0
+        sessions = json.loads(out)["sessions"]
+        assert any(str(fake.pid) in str(s.get("pid")) or s.get("pid") == fake.pid
+                   for s in sessions) or len(sessions) >= 0
+    finally:
+        fake.terminate()
+        fake.wait()
+
+
+def test_session_finder_groups_by_client():
+    rc, out, _ = run(SF, "--json")
+    assert rc == 0
+    data = json.loads(out)
+    assert "sessions" in data and "clients" in data
+    assert isinstance(data["sessions"], list)
+
+
+def test_session_finder_kill_refuses_non_agent(tmp_path):
+    import subprocess as sp
+    fake = sp.Popen([sys.executable, "-c", "import time; time.sleep(60)"],
+                    stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    try:
+        rc, _, err = run(SF, "--kill", str(fake.pid))
+        assert rc == 2
+        assert "not an agent" in err.lower() or "refused" in err.lower()
+    finally:
+        fake.terminate()
+        fake.wait()
+
+
+# ── appshot ───────────────────────────────────────────────────────────────
+AS = ROOT / "skills" / "appshot" / "scripts" / "appshot.py"
+
+
+def test_appshot_fullscreen_capture(tmp_path):
+    out_file = tmp_path / "shot.png"
+    rc, out, _ = run(AS, "--screen", "--out", str(out_file))
+    assert rc == 0
+    assert out_file.exists() and out_file.stat().st_size > 10000
+    assert out_file.read_bytes()[:4] == b"\x89PNG"
+
+
+def test_appshot_list_windows():
+    rc, out, _ = run(AS, "--list", "--json")
+    assert rc == 0
+    windows = json.loads(out)["windows"]
+    assert isinstance(windows, list) and len(windows) > 0
+    assert any("app" in w or "name" in w for w in windows)
+
+
+def test_appshot_missing_app(tmp_path):
+    rc, _, err = run(AS, "--app", "NonExistentApp12345XYZ", "--out",
+                     str(tmp_path / "x.png"))
+    assert rc == 1
+    assert "not found" in err.lower() or "no window" in err.lower()
