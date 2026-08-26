@@ -1,6 +1,6 @@
 # skills/ — CONTRIBUTOR CONTRACT
 
-31 dirs, one contract. Score for this file: uniform structure across many dirs (root covers the rest).
+34 dirs, one contract. Score for this file: uniform structure across many dirs (root covers the rest).
 
 ## OVERVIEW
 Each skill = `skills/<name>/SKILL.md` (+ optional `scripts/`, `references/`, `LICENSE.txt`). Instruction-only skills need no code; script-backed skills ship a stdlib-only Python CLI.
@@ -31,6 +31,7 @@ Each skill = `skills/<name>/SKILL.md` (+ optional `scripts/`, `references/`, `LI
 | Large engine vendored in-skill | ultimate-browsing (has own engine/AGENTS.md + ATTRIBUTION.md) |
 
 ## ANTI-PATTERNS
+- Overlapping skill purposes: every skill must answer a question no existing skill answers (secret-gate=credentials-in-diffs vs comment-checker=comments-in-diffs; usage-audit=token-totals vs session-handoff=conversation-content vs context-budget=static-estimate). Check the inventory before adding; shared helper NAMES are fine (skills are copy-portable and never import each other), shared PURPOSE is not.
 - Frontmatter `name` != dirname (test fails).
 - Description under 40 chars (test fails) or missing when-to-use routing cues.
 - Adding pip dependencies to a guard CLI.

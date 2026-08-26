@@ -1,15 +1,15 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "agent-skills",
-  "description": "31 agent skills in six families: runnable exit-code guards (context-budget, claim-audit, open-loops, subscription-audit, gate-graph, skill-decay, comment-checker), interop (skill-sync, session-handoff), engineering process (systematic-debugging, test-driven-development, verification-before-completion, using-git-worktrees, blindspot, verify-ref, log-deviation, merge-quiz, grilling, domain-modeling, linus-level), power tools (git-master, ultimate-browsing, lsp-setup, remove-ai-slops, skill-creator, skill-optimizer), and creative/frontend (design, algorithmic-art, webapp-testing, css-pro-tips, nbj-write-clearly).",
+  "description": "34 agent skills in six families: runnable exit-code guards (context-budget, claim-audit, open-loops, subscription-audit, gate-graph, skill-decay, comment-checker), interop (skill-sync, session-handoff), security (secret-gate, skill-audit, usage-audit), engineering process (systematic-debugging, test-driven-development, verification-before-completion, using-git-worktrees, blindspot, verify-ref, log-deviation, merge-quiz, grilling, domain-modeling, linus-level), power tools (git-master, ultimate-browsing, lsp-setup, remove-ai-slops, skill-creator, skill-optimizer), and creative/frontend (design, algorithmic-art, webapp-testing, css-pro-tips, nbj-write-clearly).",
   "owner": {
     "name": "trac3r00"
   },
   "plugins": [
     {
       "name": "agent-skills",
-      "description": "31 agent skills in six families: runnable exit-code guards (context-budget, claim-audit, open-loops, subscription-audit, gate-graph, skill-decay, comment-checker), interop (skill-sync, session-handoff), engineering process (systematic-debugging, test-driven-development, verification-before-completion, using-git-worktrees, blindspot, verify-ref, log-deviation, merge-quiz, grilling, domain-modeling, linus-level), power tools (git-master, ultimate-browsing, lsp-setup, remove-ai-slops, skill-creator, skill-optimizer), and creative/frontend (design, algorithmic-art, webapp-testing, css-pro-tips, nbj-write-clearly).",
-      "version": "2.2.0",
+      "description": "34 agent skills in six families: runnable exit-code guards (context-budget, claim-audit, open-loops, subscription-audit, gate-graph, skill-decay, comment-checker), interop (skill-sync, session-handoff), security (secret-gate, skill-audit, usage-audit), engineering process (systematic-debugging, test-driven-development, verification-before-completion, using-git-worktrees, blindspot, verify-ref, log-deviation, merge-quiz, grilling, domain-modeling, linus-level), power tools (git-master, ultimate-browsing, lsp-setup, remove-ai-slops, skill-creator, skill-optimizer), and creative/frontend (design, algorithmic-art, webapp-testing, css-pro-tips, nbj-write-clearly).",
+      "version": "2.3.0",
       "author": {
         "name": "trac3r00"
       },
@@ -29,13 +29,16 @@
         "personal-finance",
         "playwright",
         "process",
+        "secrets",
+        "security",
         "skill-decay",
         "skill-sync",
         "tdd",
         "testing",
-        "token-budget"
+        "token-budget",
+        "usage"
       ]
     }
   ],
-  "version": "2.2.0"
+  "version": "2.3.0"
 }

@@ -7,7 +7,7 @@ Dependency-light Python tools for auditing AI-agent context, output, handoffs, r
 
 ## Overview
 
-Agent Skills is a collection of 31 [Agent Skills](https://agentskills.io) in five families:
+Agent Skills is a collection of 34 [Agent Skills](https://agentskills.io) in five families:
 
 - **Guards** — runnable audit skills (plus the interop CLIs), each combining an instruction file (`SKILL.md`) with a standalone Python CLI that produces human-readable or JSON output and can return a non-zero status when a configured threshold is exceeded. They run locally, accept files or standard input, and need no credentials or network access.
 - **Interop** — `skill-sync` unifies custom skills across every AI provider install into one universal directory, and `session-handoff` carries work context (session logs, history, files touched) between clients so any agent can continue work started in another.
@@ -16,6 +16,26 @@ Agent Skills is a collection of 31 [Agent Skills](https://agentskills.io) in fiv
 - **Power tools** — heavyweight skills ported from [oh-my-opencode / omo-ai](https://github.com/code-yeongyu/oh-my-opencode) and anthropics/skills: git mastery, escalation web browsing with WAF bypass, LSP setup for 20 languages, AI-slop removal, and skill authoring/evaluation.
 
 The repository can be used directly from a clone or installed as the `agent-skills` plugin for Claude Code or Codex.
+
+## Why your workload needs this
+
+Every agent workload fails the same ways: the agent asserts instead of proving, context quietly bloats until quality drops, work fragments across clients, and AI-generated code smells pile up. These skills exist because each failure has a cheap, enforceable countermeasure. Find your workload:
+
+| Your workload | What silently breaks | Required skills |
+| --- | --- | --- |
+| **Long-running autonomous agents** | Context grows every turn; cost climbs and quality drops with no alarm | [`context-budget`](skills/context-budget/), [`skill-decay`](skills/skill-decay/), [`open-loops`](skills/open-loops/) |
+| **Shipping agent-written code** | Narration comments, slop patterns, and unverified "done" claims reach main | [`comment-checker`](skills/comment-checker/), [`remove-ai-slops`](skills/remove-ai-slops/), [`verification-before-completion`](skills/verification-before-completion/), [`claim-audit`](skills/claim-audit/) |
+| **Multi-client workflows** (Claude Code + Codex + others) | Skills fragment per client; work context dies when you switch | [`skill-sync`](skills/skill-sync/), [`session-handoff`](skills/session-handoff/) |
+| **Debugging and hard fixes** | Symptom patches instead of root causes; regressions hide behind refactors | [`systematic-debugging`](skills/systematic-debugging/), [`test-driven-development`](skills/test-driven-development/), [`git-master`](skills/git-master/) |
+| **Unfamiliar or risky codebases** | Hidden landmines surface mid-change; misread reference code ports wrong | [`blindspot`](skills/blindspot/), [`verify-ref`](skills/verify-ref/), [`lsp-setup`](skills/lsp-setup/), [`using-git-worktrees`](skills/using-git-worktrees/) |
+| **Design and frontend delivery** | Output looks AI-generated; CSS reinvents solved problems | [`design`](skills/design/), [`css-pro-tips`](skills/css-pro-tips/), [`webapp-testing`](skills/webapp-testing/), [`algorithmic-art`](skills/algorithmic-art/) |
+| **Planning and review discipline** | Weak plans survive until implementation exposes them | [`grilling`](skills/grilling/), [`domain-modeling`](skills/domain-modeling/), [`merge-quiz`](skills/merge-quiz/), [`log-deviation`](skills/log-deviation/), [`linus-level`](skills/linus-level/) |
+| **Docs and technical writing** | Prose that buries the answer; docs that drift from reality | [`nbj-write-clearly`](skills/nbj-write-clearly/) |
+| **Research behind blocked pages** | WAFs, JS-only rendering, and platform walls stop naive fetching | [`ultimate-browsing`](skills/ultimate-browsing/) |
+| **Security-sensitive repos** | Agents paste real credentials into examples; installed skills carry injection payloads | [`secret-gate`](skills/secret-gate/), [`skill-audit`](skills/skill-audit/) |
+| **Token cost control** | No client shows cross-client consumption; budgets blow silently | [`usage-audit`](skills/usage-audit/), [`context-budget`](skills/context-budget/) |
+| **Personal ops** | Forgotten subscriptions keep billing | [`subscription-audit`](skills/subscription-audit/) |
+| **Maintaining a skill library itself** | Redundant gates, dead skills, bloated instructions tax every prompt | [`gate-graph`](skills/gate-graph/), [`skill-creator`](skills/skill-creator/), [`skill-optimizer`](skills/skill-optimizer/) |
 
 ## Features
 
@@ -30,6 +50,9 @@ The repository can be used directly from a clone or installed as the `agent-skil
 | [`skill-sync`](skills/skill-sync/) | Discovers skills across all AI provider installs, reports provenance and conflicts, and symlinks or copies the union into one universal directory. | `--fail-on-conflict` |
 | [`comment-checker`](skills/comment-checker/) | Flags unjustified new comments/docstrings in files or diffs; BDD markers, lint directives, licenses, and TODOs auto-pass. | `--fail-over` |
 | [`session-handoff`](skills/session-handoff/) | Reads session logs from Claude Code, Codex, OpenCode/OMO, and Gemini CLI stores and produces a portable handoff briefing so any client can continue another's work. | — |
+| [`secret-gate`](skills/secret-gate/) | Blocks credentials from entering code or diffs: AWS/GitHub/API key formats, private keys, JWTs, and high-entropy assigned strings. | exit 1 on findings |
+| [`skill-audit`](skills/skill-audit/) | Security-scans installed skills for prompt-injection, data-exfiltration, and pipe-to-shell patterns before an agent trusts them. | `--fail-over` |
+| [`usage-audit`](skills/usage-audit/) | Aggregates token consumption across Claude Code, Codex, and OpenCode stores by model, client, and project. | `--budget-tokens` |
 
 ### Creative skills
 
@@ -86,7 +109,7 @@ Claude Code / Codex / compatible Agent Skills host
             text or JSON output + exit status
 ```
 
-The plugin manifests in `.claude-plugin/` and `.codex-plugin/` expose the directories under `skills/`. Nine skills are script-backed (guards plus `skill-sync`, `session-handoff`); the rest are instruction-only — the `SKILL.md` is the skill. Every script is directly executable with Python and does not depend on an agent host.
+The plugin manifests in `.claude-plugin/` and `.codex-plugin/` expose the directories under `skills/`. Twelve skills are script-backed (guards, interop, and security CLIs); the rest are instruction-only — the `SKILL.md` is the skill. Every script is directly executable with Python and does not depend on an agent host.
 
 ## Installation
 
@@ -121,7 +144,7 @@ codex plugin marketplace add Trac3r00/agent-skills
 codex plugin add agent-skills@agent-skills
 ```
 
-The plugin installs all 31 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
+The plugin installs all 34 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
 
 ## Usage
 
@@ -212,7 +235,7 @@ To add a skill, follow the contributor contract in [`skills/AGENTS.md`](skills/A
 ├── .claude-plugin/       # Claude Code marketplace and plugin metadata
 ├── .codex-plugin/        # Codex plugin metadata
 ├── .github/workflows/    # CI: pytest matrix + CLI smoke tests
-├── skills/               # 31 skills: SKILL.md instructions, 9 with standalone Python CLIs
+├── skills/               # 34 skills: SKILL.md instructions, 12 with standalone Python CLIs
 ├── tests/test_skills.py  # End-to-end CLI tests + repo-wide frontmatter validation
 ├── LICENSE
 └── README.md
