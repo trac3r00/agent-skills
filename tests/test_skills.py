@@ -1233,3 +1233,42 @@ def test_api_tester_fails_on_wrong_status(tmp_path):
 def test_api_tester_unreachable(tmp_path):
     rc, _, err = run(AT, "http://127.0.0.1:1/nope", "--json")
     assert rc == 2
+
+
+# ── log-analyzer ──────────────────────────────────────────────────────────
+LA = ROOT / "skills" / "log-analyzer" / "scripts" / "log_analyzer.py"
+
+
+def test_log_analyzer_groups_errors(tmp_path):
+    f = tmp_path / "app.log"
+    f.write_text(
+        "2026-08-25 10:00 INFO started\n"
+        "2026-08-25 10:01 ERROR connection refused to db-01:5432\n"
+        "2026-08-25 10:02 ERROR connection refused to db-02:5432\n"
+        "2026-08-25 10:03 WARN slow query 1200ms\n"
+        "2026-08-25 10:04 ERROR connection refused to db-03:5432\n"
+        "2026-08-25 10:05 ERROR null pointer in handler UserService.getUser\n"
+    )
+    rc, out, _ = run(LA, str(f), "--json")
+    data = json.loads(out)
+    assert rc == 1
+    assert data["total_lines"] == 6
+    assert data["errors"] == 4 and data["warnings"] == 1
+    top = data["patterns"][0]
+    assert top["count"] == 3 and "connection refused" in top["pattern"]
+
+
+def test_log_analyzer_clean_log(tmp_path):
+    f = tmp_path / "ok.log"
+    f.write_text("INFO all good\nINFO done\n")
+    rc, out, _ = run(LA, str(f), "--json")
+    assert rc == 0
+    assert json.loads(out)["errors"] == 0
+
+
+def test_log_analyzer_level_filter(tmp_path):
+    f = tmp_path / "f.log"
+    f.write_text("ERROR bad\nWARN meh\nERROR worse\n")
+    rc, out, _ = run(LA, str(f), "--level", "ERROR", "--json")
+    data = json.loads(out)
+    assert data["errors"] == 2 and data["warnings"] == 0

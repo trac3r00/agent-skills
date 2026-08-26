@@ -1,6 +1,6 @@
 # skills/ — CONTRIBUTOR CONTRACT
 
-48 dirs, one contract. Score for this file: uniform structure across many dirs (root covers the rest).
+49 dirs, one contract. Score for this file: uniform structure across many dirs (root covers the rest).
 
 ## OVERVIEW
 Each skill = `skills/<name>/SKILL.md` (+ optional `scripts/`, `references/`, `LICENSE.txt`). Instruction-only skills need no code; script-backed skills ship a stdlib-only Python CLI.
