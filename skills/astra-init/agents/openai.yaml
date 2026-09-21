@@ -1,0 +1,6 @@
+interface:
+  display_name: "Astra Init"
+  short_description: "Initialize an Astra-only project working agreement"
+  default_prompt: "Use $astra-init to initialize this project's Astra working agreement after verifying the active model."
+policy:
+  allow_implicit_invocation: false

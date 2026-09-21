@@ -7,7 +7,7 @@ Dependency-light Python tools for auditing AI-agent context, output, handoffs, r
 
 ## Overview
 
-Agent Skills is a collection of 61 [Agent Skills](https://agentskills.io) in five families:
+Agent Skills is a collection of 64 [Agent Skills](https://agentskills.io) in five families:
 
 - **Guards** — runnable audit skills (plus the interop CLIs), each combining an instruction file (`SKILL.md`) with a standalone Python CLI that produces human-readable or JSON output and can return a non-zero status when a configured threshold is exceeded. They run locally, accept files or standard input, and need no credentials or network access.
 - **Interop** — `skill-sync` unifies custom skills across every AI provider install into one universal directory, and `session-handoff` carries work context (session logs, history, files touched) between clients so any agent can continue work started in another.
@@ -27,6 +27,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | **Shipping agent-written code** | Narration comments, slop patterns, and unverified "done" claims reach main | [`comment-checker`](skills/comment-checker/), [`remove-ai-slops`](skills/remove-ai-slops/), [`verification-before-completion`](skills/verification-before-completion/), [`claim-audit`](skills/claim-audit/) |
 | **Multi-client workflows** (Claude Code + Codex + others) | Skills fragment per client; work context dies when you switch | [`skill-sync`](skills/skill-sync/), [`session-handoff`](skills/session-handoff/) |
 | **Debugging and hard fixes** | Symptom patches instead of root causes; regressions hide behind refactors | [`systematic-debugging`](skills/systematic-debugging/), [`test-driven-development`](skills/test-driven-development/), [`git-master`](skills/git-master/) |
+| **Per-model working agreements** | Generic AGENTS.md bloat every model session; Astra needs lean, gated behavior instead | [`astra-init`](skills/astra-init/) |
 | **Unfamiliar or risky codebases** | Hidden landmines surface mid-change; misread reference code ports wrong | [`blindspot`](skills/blindspot/), [`verify-ref`](skills/verify-ref/), [`lsp-setup`](skills/lsp-setup/), [`using-git-worktrees`](skills/using-git-worktrees/) |
 | **Design and frontend delivery** | Output looks AI-generated; CSS reinvents solved problems | [`design`](skills/design/), [`css-pro-tips`](skills/css-pro-tips/), [`webapp-testing`](skills/webapp-testing/), [`algorithmic-art`](skills/algorithmic-art/) |
 | **Planning and review discipline** | Weak plans survive until implementation exposes them | [`grilling`](skills/grilling/), [`domain-modeling`](skills/domain-modeling/), [`merge-quiz`](skills/merge-quiz/), [`log-deviation`](skills/log-deviation/), [`linus-level`](skills/linus-level/) |
@@ -34,7 +35,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | **Research behind blocked pages** | WAFs, JS-only rendering, and platform walls stop naive fetching | [`ultimate-browsing`](skills/ultimate-browsing/) |
 | **Security-sensitive repos** | Agents paste real credentials into examples; installed skills carry injection payloads | [`secret-gate`](skills/secret-gate/), [`skill-audit`](skills/skill-audit/) |
 | **Token cost control** | No client shows cross-client consumption; budgets blow silently | [`usage-audit`](skills/usage-audit/), [`context-budget`](skills/context-budget/) |
-| **Backend / deployment** | New env keys never make it to prod; the deploy crashes at 2am; endpoints return 500s nobody checked | [`env-gate`](skills/env-gate/), [`api-tester`](skills/api-tester/), [`log-analyzer`](skills/log-analyzer/) |
+| **Backend / deployment** | New env keys never make it to prod; the deploy crashes at 2am; endpoints return 500s nobody checked | [`env-gate`](skills/env-gate/), [`api-tester`](skills/api-tester/), [`gh-fix-ci`](skills/gh-fix-ci/), [`gh-address-comments`](skills/gh-address-comments/), [`log-analyzer`](skills/log-analyzer/) |
 | **Security / headers** | Pages ship without HSTS or CSP; clickjacking and downgrade attacks stay open | [`sec-headers`](skills/sec-headers/), [`secret-gate`](skills/secret-gate/), [`skill-audit`](skills/skill-audit/) |
 | **Sysops / network** | "Is the box okay?" and "is it reachable?" have no fast deterministic answers | [`sys-health`](skills/sys-health/), [`net-probe`](skills/net-probe/), [`cron-audit`](skills/cron-audit/) |
 | **3D / image generation** | First generations miss the brief; Three.js scenes look like tutorials | [`image-gen`](skills/image-gen/), [`3d-design`](skills/3d-design/), [`design`](skills/design/) |
@@ -192,7 +193,7 @@ codex plugin marketplace add Trac3r00/agent-skills
 codex plugin add agent-skills@agent-skills
 ```
 
-The plugin installs all 61 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
+The plugin installs all 64 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
 
 ## Usage
 
@@ -283,7 +284,7 @@ To add a skill, follow the contributor contract in [`skills/AGENTS.md`](skills/A
 ├── .claude-plugin/       # Claude Code marketplace and plugin metadata
 ├── .codex-plugin/        # Codex plugin metadata
 ├── .github/workflows/    # CI: pytest matrix + CLI smoke tests
-├── skills/               # 61 skills: SKILL.md instructions, 35 with standalone Python CLIs
+├── skills/               # 64 skills: SKILL.md instructions, 35 with standalone Python CLIs
 ├── tests/test_skills.py  # End-to-end CLI tests + repo-wide frontmatter validation
 ├── LICENSE
 └── README.md

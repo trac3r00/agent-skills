@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "count": 61,
+  "count": 64,
   "families": {
     "backend": [
       "api-tester",
@@ -11,6 +11,8 @@
       "doc-reader",
       "env-gate",
       "ext-scaffold",
+      "gh-address-comments",
+      "gh-fix-ci",
       "graph-tools",
       "json-diff",
       "log-analyzer",
@@ -63,6 +65,7 @@
       "ultimate-browsing"
     ],
     "process": [
+      "astra-init",
       "blindspot",
       "domain-modeling",
       "grilling",
@@ -82,6 +85,7 @@
   },
   "personas": {
     "agentic": [
+      "astra-init",
       "context-budget",
       "linus-level",
       "log-deviation",
@@ -100,6 +104,8 @@
       "diff-review",
       "doc-reader",
       "env-gate",
+      "gh-address-comments",
+      "gh-fix-ci",
       "git-master",
       "json-diff",
       "log-analyzer",
@@ -140,6 +146,7 @@
       "changelog-gen",
       "diff-review",
       "env-gate",
+      "gh-fix-ci",
       "git-master",
       "log-analyzer",
       "lsp-setup",
@@ -292,6 +299,25 @@
       "personas": [],
       "script_backed": true,
       "path": "skills/appshot"
+    },
+    {
+      "name": "astra-init",
+      "description": "Initialize a concise per-project working agreement for GPT-6 Astra sessions - identity gate, instruction priority, pre-authorized safe commands, done-definition. Use when a user working with Astra wants a lean behavioral agreement distinct from repo AGENTS.md.",
+      "version": "2.1.0",
+      "license": "MIT",
+      "tags": [
+        "astra",
+        "working-agreement",
+        "initialization",
+        "agents-md",
+        "model-gating"
+      ],
+      "family": "process",
+      "personas": [
+        "agentic"
+      ],
+      "script_backed": false,
+      "path": "skills/astra-init"
     },
     {
       "name": "blindspot",
@@ -574,6 +600,46 @@
       ],
       "script_backed": true,
       "path": "skills/gate-graph"
+    },
+    {
+      "name": "gh-address-comments",
+      "description": "Help address review/issue comments on the open GitHub PR for the current branch using gh CLI; verify gh auth first and prompt the user to authenticate if not logged in.",
+      "version": "1.0.0",
+      "license": "Apache-2.0 (from openai/skills; see LICENSE.txt)",
+      "tags": [
+        "github",
+        "ci",
+        "pr",
+        "workflow",
+        "review",
+        "agent"
+      ],
+      "family": "backend",
+      "personas": [
+        "backend"
+      ],
+      "script_backed": true,
+      "path": "skills/gh-address-comments"
+    },
+    {
+      "name": "gh-fix-ci",
+      "description": "Use when a user asks to debug or fix failing GitHub PR checks that run in GitHub Actions; use `gh` to inspect checks and logs, summarize failure context, draft a fix plan, and implement only after explicit approval. Treat external providers (for example Buildkite) as out of scope and report only the details URL.",
+      "version": "1.0.0",
+      "license": "Apache-2.0 (from openai/skills; see LICENSE.txt)",
+      "tags": [
+        "github",
+        "ci",
+        "pr",
+        "workflow",
+        "agent"
+      ],
+      "family": "backend",
+      "personas": [
+        "backend",
+        "devops"
+      ],
+      "script_backed": true,
+      "path": "skills/gh-fix-ci"
     },
     {
       "name": "git-master",
