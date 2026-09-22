@@ -45,7 +45,7 @@ FAMILIES = {
     "creative": ["design", "algorithmic-art", "webapp-testing", "css-pro-tips",
                  "nbj-write-clearly", "visual-qa", "3d-design", "image-gen"],
     "power": ["git-master", "ultimate-browsing", "lsp-setup", "remove-ai-slops",
-              "skill-creator", "skill-optimizer", "apple-suite"],
+              "skill-creator", "skill-optimizer", "apple-suite", "herdr"],
 }
 
 PERSONAS = {
@@ -59,9 +59,13 @@ PERSONAS = {
                 "api-tester", "log-analyzer", "json-diff", "gh-fix-ci", "gh-address-comments"],
     "devops": ["env-gate", "secret-gate", "diff-review", "git-master", "lsp-setup",
                "api-tester", "log-analyzer", "repo-audit", "changelog-gen", "gh-fix-ci"],
+    "devops": ["env-gate", "secret-gate", "diff-review", "git-master", "lsp-setup",
+               "api-tester", "log-analyzer", "repo-audit", "changelog-gen", "gh-fix-ci",
+               "herdr"],
     "agentic": ["skill-sync", "session-handoff", "session-rules", "skill-audit",
                 "skill-decay", "skill-creator", "skill-optimizer", "usage-audit",
-                "context-budget", "open-loops", "linus-level", "log-deviation", "astra-init"],
+                "context-budget", "open-loops", "linus-level", "log-deviation", "astra-init",
+                "herdr"],
     "design": ["design", "algorithmic-art", "css-pro-tips", "visual-qa",
                "nbj-write-clearly", "seo-audit", "3d-design", "image-gen"],
     "verification": ["verification-before-completion", "claim-audit", "merge-quiz",

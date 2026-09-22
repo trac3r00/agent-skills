@@ -7,13 +7,13 @@ Dependency-light Python tools for auditing AI-agent context, output, handoffs, r
 
 ## Overview
 
-Agent Skills is a collection of 64 [Agent Skills](https://agentskills.io) in five families:
+Agent Skills is a collection of 65 [Agent Skills](https://agentskills.io) in five families:
 
 - **Guards** — runnable audit skills (plus the interop CLIs), each combining an instruction file (`SKILL.md`) with a standalone Python CLI that produces human-readable or JSON output and can return a non-zero status when a configured threshold is exceeded. They run locally, accept files or standard input, and need no credentials or network access.
 - **Interop** — `skill-sync` unifies custom skills across every AI provider install into one universal directory, and `session-handoff` carries work context (session logs, history, files touched) between clients so any agent can continue work started in another.
 - **Creative** — design, art, frontend, and writing skills: three derived from [anthropics/skills](https://github.com/anthropics/skills) (Apache-2.0), consolidated and de-branded so any SKILL.md-reading agent can use them outside Claude Code, plus community CSS and technical-writing skills.
 - **Process** — engineering-discipline skills from [obra/superpowers](https://github.com/obra/superpowers) (MIT) and [hiendinhngoc/unknowns](https://github.com/hiendinhngoc/unknowns) (MIT): root-cause debugging, TDD, evidence-before-claims verification, git worktrees, pre-work blindspot recon, reference comprehension gates, deviation logging, and pre-merge quizzes.
-- **Power tools** — heavyweight skills ported from [oh-my-opencode / omo-ai](https://github.com/code-yeongyu/oh-my-opencode) and anthropics/skills: git mastery, escalation web browsing with WAF bypass, LSP setup for 20 languages, AI-slop removal, and skill authoring/evaluation.
+- **Power tools** — heavyweight skills ported from [oh-my-opencode / omo-ai](https://github.com/code-yeongyu/oh-my-opencode) and anthropics/skills: git mastery, escalation web browsing with WAF bypass, LSP setup for 20 languages, AI-slop removal, skill authoring/evaluation, and `herdr` — full-surface control of a terminal workspace manager for coding agents (panes, tabs, workspaces, agent lifecycle, remote machines, and the 103-method socket API) from any client.
 
 The repository can be used directly from a clone or installed as the `agent-skills` plugin for Claude Code or Codex.
 
@@ -50,6 +50,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | **macOS automation** | Agents can't touch the user's Notes, Reminders, Maps, Mail, Calendar, Contacts, Photos, or run Terminal commands without an API layer | [`apple-suite`](skills/apple-suite/) |
 | **UI / visual delivery** | Functional tests pass while the layout is broken, the font is wrong, or the CJK glyphs are corrupted | [`visual-qa`](skills/visual-qa/), [`webapp-testing`](skills/webapp-testing/), [`appshot`](skills/appshot/) |
 | **Agent administration** | Multiple agent clients run at once; nobody knows which are alive, stuck, or killable | [`session-finder`](skills/session-finder/), [`session-handoff`](skills/session-handoff/), [`usage-audit`](skills/usage-audit/) |
+| **Driving other agents in terminals** | Sibling agents get launched by hand; reading their output, waiting for them, and coordinating layout has no scriptable surface | [`herdr`](skills/herdr/) |
 | **Social research** | Social content is behind logins and JS walls; public APIs go unused | [`social-research`](skills/social-research/), [`ultimate-browsing`](skills/ultimate-browsing/) |
 | **Personal ops** | Forgotten subscriptions keep billing | [`subscription-audit`](skills/subscription-audit/) |
 | **Maintaining a skill library itself** | Redundant gates, dead skills, bloated instructions tax every prompt | [`gate-graph`](skills/gate-graph/), [`skill-creator`](skills/skill-creator/), [`skill-optimizer`](skills/skill-optimizer/) |
@@ -139,6 +140,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | [`remove-ai-slops`](skills/remove-ai-slops/) | Behavior-preserving cleanup of AI-generated code smells: regression tests first, categorized passes, quality gates. |
 | [`skill-creator`](skills/skill-creator/) | Author, validate, package, and eval-test new agent skills, with grader/comparator agent prompts. |
 | [`skill-optimizer`](skills/skill-optimizer/) | Refines existing skills through real usage: saves tokens, eliminates redundancy, tightens instructions. |
+| [`herdr`](skills/herdr/) | Drives Herdr's terminal workspace manager from any agent client: workspaces, tabs, panes, agent lifecycle, worktrees, remote machines, integrations, config, and the full socket API surface with per-flag CLI detail. | — |
 
 All guard CLIs support JSON output, operate offline, and require no credentials or network access.
 
@@ -193,7 +195,7 @@ codex plugin marketplace add Trac3r00/agent-skills
 codex plugin add agent-skills@agent-skills
 ```
 
-The plugin installs all 64 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
+The plugin installs all 65 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
 
 ## Usage
 
@@ -284,7 +286,7 @@ To add a skill, follow the contributor contract in [`skills/AGENTS.md`](skills/A
 ├── .claude-plugin/       # Claude Code marketplace and plugin metadata
 ├── .codex-plugin/        # Codex plugin metadata
 ├── .github/workflows/    # CI: pytest matrix + CLI smoke tests
-├── skills/               # 64 skills: SKILL.md instructions, 35 with standalone Python CLIs
+├── skills/               # 65 skills: SKILL.md instructions, 35 with standalone Python CLIs
 ├── tests/test_skills.py  # End-to-end CLI tests + repo-wide frontmatter validation
 ├── LICENSE
 └── README.md

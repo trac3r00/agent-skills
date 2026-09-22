@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "count": 64,
+  "count": 65,
   "families": {
     "backend": [
       "api-tester",
@@ -58,6 +58,7 @@
     "power": [
       "apple-suite",
       "git-master",
+      "herdr",
       "lsp-setup",
       "remove-ai-slops",
       "skill-creator",
@@ -87,6 +88,7 @@
     "agentic": [
       "astra-init",
       "context-budget",
+      "herdr",
       "linus-level",
       "log-deviation",
       "open-loops",
@@ -148,6 +150,7 @@
       "env-gate",
       "gh-fix-ci",
       "git-master",
+      "herdr",
       "log-analyzer",
       "lsp-setup",
       "repo-audit",
@@ -695,6 +698,29 @@
       ],
       "script_backed": false,
       "path": "skills/grilling"
+    },
+    {
+      "name": "herdr",
+      "description": "\"Drive Herdr, a terminal workspace manager for AI coding agents, from any agent client (Claude Code, Codex, pi/senpi, Gemini, OpenCode, Kimi, Grok, Cursor, Hermes, and more). Covers the entire surface - workspaces, tabs, panes, agent lifecycle, worktrees, remote machines, integrations, config, and the 103-method socket API - so a client can build terminal layout, start and prompt sibling agents, read their output, wait on state changes, and coordinate parallel work. Use when the user mentions Herdr or when panes, tabs, sibling agents, or a persistent terminal session must be inspected or controlled.\"",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "herdr",
+        "terminal",
+        "multiplexer",
+        "panes",
+        "agents",
+        "orchestration",
+        "socket-api",
+        "cli"
+      ],
+      "family": "power",
+      "personas": [
+        "agentic",
+        "devops"
+      ],
+      "script_backed": false,
+      "path": "skills/herdr"
     },
     {
       "name": "image-gen",
