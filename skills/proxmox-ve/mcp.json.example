@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "proxmox": {
+      "type": "stdio",
+      "command": "/absolute/path/to/bun",
+      "args": [
+        "--env-file=/absolute/path/to/proxmox.env",
+        "/absolute/path/to/agent-skills/skills/proxmox-ve/mcp/dist/index.js"
+      ],
+      "cwd": "/absolute/path/to/agent-skills/skills/proxmox-ve/mcp",
+      "lifecycle": "lazy",
+      "requestTimeoutMs": 180000,
+      "connectTimeoutMs": 15000,
+      "includeTools": [
+        "proxmox_*"
+      ]
+    }
+  }
+}

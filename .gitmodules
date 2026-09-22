@@ -1,0 +1,3 @@
+[submodule "skills/proxmox-ve/mcp"]
+	path = skills/proxmox-ve/mcp
+	url = https://github.com/trac3r00/proxmox-mcp.git

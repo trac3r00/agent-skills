@@ -38,6 +38,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | **Backend / deployment** | New env keys never make it to prod; the deploy crashes at 2am; endpoints return 500s nobody checked | [`env-gate`](skills/env-gate/), [`api-tester`](skills/api-tester/), [`gh-fix-ci`](skills/gh-fix-ci/), [`gh-address-comments`](skills/gh-address-comments/), [`log-analyzer`](skills/log-analyzer/) |
 | **Security / headers** | Pages ship without HSTS or CSP; clickjacking and downgrade attacks stay open | [`sec-headers`](skills/sec-headers/), [`secret-gate`](skills/secret-gate/), [`skill-audit`](skills/skill-audit/) |
 | **Sysops / network** | "Is the box okay?" and "is it reachable?" have no fast deterministic answers | [`sys-health`](skills/sys-health/), [`net-probe`](skills/net-probe/), [`cron-audit`](skills/cron-audit/) |
+| **Proxmox VE administration** | API calls can mutate cluster state or expose local files without a deliberate workflow | [`proxmox-ve`](skills/proxmox-ve/) |
 | **3D / image generation** | First generations miss the brief; Three.js scenes look like tutorials | [`image-gen`](skills/image-gen/), [`3d-design`](skills/3d-design/), [`design`](skills/design/) |
 | **Graph / dependency data** | Dependency chains and state machines are edge lists nobody can query | [`graph-tools`](skills/graph-tools/) |
 | **Browser extensions** | MV3 boilerplate wastes the first hour of every extension project | [`ext-scaffold`](skills/ext-scaffold/) |
@@ -90,6 +91,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | [`appshot`](skills/appshot/) | Screenshots any macOS app window, full screen, or region via native screencapture — zero dependencies. | — |
 | [`social-research`](skills/social-research/) | Read-only social content discovery via public APIs: X syndication, Reddit JSON, HN Firebase/Algolia, Bluesky AT Protocol. Threads limitation documented honestly. | — |
 | [`api-tester`](skills/api-tester/) | Fires real HTTP requests and validates status, JSON field values, and latency — endpoint smoke tests from CI or an agent session. | exit 1 on mismatch |
+| [`proxmox-ve`](skills/proxmox-ve/) | Safe Proxmox VE MCP workflow with audited source pinned as a Git submodule, API discovery, and explicit administration boundaries. | — |
 | [`log-analyzer`](skills/log-analyzer/) | Groups log errors by normalized pattern and ranks offenders; handles level-tagged and exception-style logs. | `--budget-errors`, `--max-patterns` |
 | [`json-diff`](skills/json-diff/) | Semantic JSON diff by path: added/removed/changed with values, nested objects, positional arrays. | `--max-changes` |
 | [`repo-audit`](skills/repo-audit/) | Git repo structural health: LICENSE/README/tests/CI/gitignore, large files, stale merged branches. | `--fail-on` |
@@ -195,7 +197,7 @@ codex plugin marketplace add Trac3r00/agent-skills
 codex plugin add agent-skills@agent-skills
 ```
 
-The plugin installs all 65 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
+The plugin installs all 66 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
 
 ## Usage
 
@@ -286,7 +288,7 @@ To add a skill, follow the contributor contract in [`skills/AGENTS.md`](skills/A
 ├── .claude-plugin/       # Claude Code marketplace and plugin metadata
 ├── .codex-plugin/        # Codex plugin metadata
 ├── .github/workflows/    # CI: pytest matrix + CLI smoke tests
-├── skills/               # 65 skills: SKILL.md instructions, 35 with standalone Python CLIs
+├── skills/               # 66 skills: SKILL.md instructions, 35 with standalone Python CLIs
 ├── tests/test_skills.py  # End-to-end CLI tests + repo-wide frontmatter validation
 ├── LICENSE
 └── README.md

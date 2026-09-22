@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "count": 65,
+  "count": 66,
   "families": {
     "backend": [
       "api-tester",
@@ -51,6 +51,7 @@
     ],
     "other": [
       "appshot",
+      "proxmox-ve",
       "session-finder",
       "skill-picker",
       "social-research"
@@ -918,6 +919,24 @@
       ],
       "script_backed": true,
       "path": "skills/portfolio-audit"
+    },
+    {
+      "name": "proxmox-ve",
+      "description": "Safely operate Proxmox VE through its MCP server: discover APIs, inspect clusters, and perform deliberate administration.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "proxmox",
+        "virtualization",
+        "mcp",
+        "infrastructure",
+        "api",
+        "security"
+      ],
+      "family": "other",
+      "personas": [],
+      "script_backed": false,
+      "path": "skills/proxmox-ve"
     },
     {
       "name": "remove-ai-slops",
