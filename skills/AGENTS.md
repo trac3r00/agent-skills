@@ -1,9 +1,9 @@
 # skills/ — CONTRIBUTOR CONTRACT
 
-65 dirs, one contract. Score for this file: uniform structure across many dirs (root covers the rest).
+67 dirs, one contract. Score for this file: uniform structure across many dirs (root covers the rest).
 
 ## OVERVIEW
-Each skill = `skills/<name>/SKILL.md` (+ optional `scripts/`, `references/`, `LICENSE.txt`). Instruction-only skills need no code; script-backed skills ship a stdlib-only Python CLI.
+Each skill = `skills/<name>/SKILL.md` (+ optional `scripts/`, `references/`, `LICENSE.txt`). Instruction-only skills need no code; script-backed skills ship a stdlib-only Python CLI (`pro-review` is the exception: zero-dependency Node `.mjs`).
 
 ## ADDING A SKILL
 1. `SKILL.md` frontmatter — required, test-enforced (`tests/test_skills.py`):

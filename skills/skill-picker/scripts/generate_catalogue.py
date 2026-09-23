@@ -45,7 +45,7 @@ FAMILIES = {
     "creative": ["design", "algorithmic-art", "webapp-testing", "css-pro-tips",
                  "nbj-write-clearly", "visual-qa", "3d-design", "image-gen"],
     "power": ["git-master", "ultimate-browsing", "lsp-setup", "remove-ai-slops",
-              "skill-creator", "skill-optimizer", "apple-suite", "herdr"],
+              "skill-creator", "skill-optimizer", "apple-suite", "herdr", "pro-review"],
 }
 
 PERSONAS = {
@@ -65,14 +65,14 @@ PERSONAS = {
     "agentic": ["skill-sync", "session-handoff", "session-rules", "skill-audit",
                 "skill-decay", "skill-creator", "skill-optimizer", "usage-audit",
                 "context-budget", "open-loops", "linus-level", "log-deviation", "astra-init",
-                "herdr"],
+                "herdr", "pro-review"],
     "design": ["design", "algorithmic-art", "css-pro-tips", "visual-qa",
                "nbj-write-clearly", "seo-audit", "3d-design", "image-gen"],
     "verification": ["verification-before-completion", "claim-audit", "merge-quiz",
                      "verify-ref", "blindspot", "systematic-debugging",
                      "test-driven-development", "comment-checker", "secret-gate",
                      "skill-audit", "gate-graph", "env-gate", "diff-review",
-                     "resume-audit", "seo-audit", "portfolio-audit"],
+                     "resume-audit", "seo-audit", "portfolio-audit", "pro-review"],
     "career": ["resume-audit", "nbj-write-clearly", "doc-reader"],
     "finance": ["portfolio-audit", "subscription-audit"],
     "macos": ["apple-suite"],

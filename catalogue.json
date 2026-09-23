@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "count": 66,
+  "count": 67,
   "families": {
     "backend": [
       "api-tester",
@@ -61,6 +61,7 @@
       "git-master",
       "herdr",
       "lsp-setup",
+      "pro-review",
       "remove-ai-slops",
       "skill-creator",
       "skill-optimizer",
@@ -93,6 +94,7 @@
       "linus-level",
       "log-deviation",
       "open-loops",
+      "pro-review",
       "session-handoff",
       "session-rules",
       "skill-audit",
@@ -193,6 +195,7 @@
       "gate-graph",
       "merge-quiz",
       "portfolio-audit",
+      "pro-review",
       "resume-audit",
       "secret-gate",
       "seo-audit",
@@ -919,6 +922,28 @@
       ],
       "script_backed": true,
       "path": "skills/portfolio-audit"
+    },
+    {
+      "name": "pro-review",
+      "description": "\"Explicit second-opinion code review: scope the change set, hand a sized, hazard-filtered brief to ChatGPT Pro (default, through a pinned guarded browser transport) or to a real agent client (OmO, Claude, Codex) in its own Herdr pane, then machine-check the returned report and verify every finding locally. Use only when invoked as /pro-review, $pro-review, or /skill:pro-review.\"",
+      "version": "1.0.0",
+      "license": "MIT",
+      "tags": [
+        "review",
+        "code-review",
+        "chatgpt-pro",
+        "second-opinion",
+        "herdr",
+        "agents",
+        "verification"
+      ],
+      "family": "power",
+      "personas": [
+        "agentic",
+        "verification"
+      ],
+      "script_backed": false,
+      "path": "skills/pro-review"
     },
     {
       "name": "proxmox-ve",

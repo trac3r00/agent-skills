@@ -1,7 +1,7 @@
 {
   "name": "agent-skills",
   "description": "66 agent skills across eight families: deterministic guards, interop, security, backend/deploy, domains, engineering process, power tools, and creative/frontend workflows, including audited Proxmox VE MCP administration.",
-  "version": "2.8.0",
+  "version": "2.9.0",
   "author": {
     "name": "trac3r00"
   },

@@ -7,7 +7,7 @@ Dependency-light Python tools for auditing AI-agent context, output, handoffs, r
 
 ## Overview
 
-Agent Skills is a collection of 65 [Agent Skills](https://agentskills.io) in five families:
+Agent Skills is a collection of 67 [Agent Skills](https://agentskills.io) in five families:
 
 - **Guards** — runnable audit skills (plus the interop CLIs), each combining an instruction file (`SKILL.md`) with a standalone Python CLI that produces human-readable or JSON output and can return a non-zero status when a configured threshold is exceeded. They run locally, accept files or standard input, and need no credentials or network access.
 - **Interop** — `skill-sync` unifies custom skills across every AI provider install into one universal directory, and `session-handoff` carries work context (session logs, history, files touched) between clients so any agent can continue work started in another.
@@ -52,6 +52,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | **UI / visual delivery** | Functional tests pass while the layout is broken, the font is wrong, or the CJK glyphs are corrupted | [`visual-qa`](skills/visual-qa/), [`webapp-testing`](skills/webapp-testing/), [`appshot`](skills/appshot/) |
 | **Agent administration** | Multiple agent clients run at once; nobody knows which are alive, stuck, or killable | [`session-finder`](skills/session-finder/), [`session-handoff`](skills/session-handoff/), [`usage-audit`](skills/usage-audit/) |
 | **Driving other agents in terminals** | Sibling agents get launched by hand; reading their output, waiting for them, and coordinating layout has no scriptable surface | [`herdr`](skills/herdr/) |
+| **Independent second opinions** | Self-review rubber-stamps its own blind spots; pasting code into a chat loses scope, files, and any way to check the answer | [`pro-review`](skills/pro-review/) |
 | **Social research** | Social content is behind logins and JS walls; public APIs go unused | [`social-research`](skills/social-research/), [`ultimate-browsing`](skills/ultimate-browsing/) |
 | **Personal ops** | Forgotten subscriptions keep billing | [`subscription-audit`](skills/subscription-audit/) |
 | **Maintaining a skill library itself** | Redundant gates, dead skills, bloated instructions tax every prompt | [`gate-graph`](skills/gate-graph/), [`skill-creator`](skills/skill-creator/), [`skill-optimizer`](skills/skill-optimizer/) |
@@ -143,6 +144,7 @@ Every agent workload fails the same ways: the agent asserts instead of proving, 
 | [`skill-creator`](skills/skill-creator/) | Author, validate, package, and eval-test new agent skills, with grader/comparator agent prompts. |
 | [`skill-optimizer`](skills/skill-optimizer/) | Refines existing skills through real usage: saves tokens, eliminates redundancy, tightens instructions. |
 | [`herdr`](skills/herdr/) | Drives Herdr's terminal workspace manager from any agent client: workspaces, tabs, panes, agent lifecycle, worktrees, remote machines, integrations, config, and the full socket API surface with per-flag CLI detail. | — |
+| [`pro-review`](skills/pro-review/) | Explicit second-opinion review: scopes the change set, filters secrets and oversized files, hands a sized brief to ChatGPT Pro through a pinned guarded browser transport (or to a client in a Herdr pane), and machine-checks the returned report. Needs Node.js 24+ and a ChatGPT Pro login. | — |
 
 All guard CLIs support JSON output, operate offline, and require no credentials or network access.
 
@@ -197,7 +199,7 @@ codex plugin marketplace add Trac3r00/agent-skills
 codex plugin add agent-skills@agent-skills
 ```
 
-The plugin installs all 66 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
+The plugin installs all 67 skills together. To use individual skills without the plugin, copy the relevant directory from `skills/` into the skills directory supported by your agent host, or use the bundled `skill-sync` skill to link them into a universal directory.
 
 ## Usage
 
@@ -288,7 +290,7 @@ To add a skill, follow the contributor contract in [`skills/AGENTS.md`](skills/A
 ├── .claude-plugin/       # Claude Code marketplace and plugin metadata
 ├── .codex-plugin/        # Codex plugin metadata
 ├── .github/workflows/    # CI: pytest matrix + CLI smoke tests
-├── skills/               # 66 skills: SKILL.md instructions, 35 with standalone Python CLIs
+├── skills/               # 67 skills: SKILL.md instructions, 35 with standalone Python CLIs
 ├── tests/test_skills.py  # End-to-end CLI tests + repo-wide frontmatter validation
 ├── LICENSE
 └── README.md
