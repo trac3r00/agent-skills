@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 CB = ROOT / "skills" / "context-budget" / "scripts" / "context_budget.py"
 CA = ROOT / "skills" / "claim-audit" / "scripts" / "claim_audit.py"
@@ -1137,11 +1139,25 @@ def test_session_finder_detects_known_process(tmp_path):
 
 
 def test_session_finder_groups_by_client():
-    rc, out, _ = run(SF, "--json")
-    assert rc == 0
-    data = json.loads(out)
-    assert "sessions" in data and "clients" in data
-    assert isinstance(data["sessions"], list)
+    # Plant a process whose argv[0] looks like a codex CLI so detection does
+    # not depend on real agent sessions running on the host.
+    import shutil
+    import subprocess as sp
+    fake = sp.Popen(["codex-fake-agent", "60"], executable=shutil.which("sleep"),
+                    stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    try:
+        rc, out, _ = run(SF, "--json")
+        assert rc == 0
+        data = json.loads(out)
+        assert "sessions" in data and "clients" in data
+        assert isinstance(data["sessions"], list)
+        mine = [s for s in data["sessions"] if s["pid"] == fake.pid]
+        assert len(mine) == 1 and mine[0]["client"] == "codex"
+        assert data["clients"]["codex"] >= 1
+        assert data["count"] == len(data["sessions"])
+    finally:
+        fake.terminate()
+        fake.wait()
 
 
 def test_session_finder_kill_refuses_non_agent(tmp_path):
@@ -1161,27 +1177,93 @@ def test_session_finder_kill_refuses_non_agent(tmp_path):
 AS = ROOT / "skills" / "appshot" / "scripts" / "appshot.py"
 
 
-def test_appshot_fullscreen_capture(tmp_path):
+_FAKE_SCREENCAPTURE = """\
+import json, os, sys
+with open(os.environ["APPSHOT_TEST_LOG"], "a") as f:
+    f.write(json.dumps(sys.argv[1:]) + "\\n")
+with open(sys.argv[-1], "wb") as f:
+    f.write(b"\\x89PNG\\r\\n\\x1a\\n" + b"\\0" * 20000)
+"""
+
+_FAKE_OSASCRIPT = """\
+import sys
+script = sys.argv[-1]
+if "every process whose visible is true" in script:
+    print("Finder :: 2 window(s)")
+    print("Notes :: 1 window(s)")
+elif "to activate" in script:
+    print("execution error: Can't get application.", file=sys.stderr)
+    sys.exit(1)
+else:
+    sys.exit(1)
+"""
+
+
+def _load_appshot():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("appshot_under_test", AS)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.fixture
+def appshot(tmp_path, monkeypatch):
+    # Stand-in screencapture/osascript binaries so the CLI's real control
+    # flow runs without a macOS desktop or Screen Recording permission.
+    # Each screencapture call is logged to tmp_path/capture.log.
+    import os
+    import stat
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    for name, body in (("screencapture", _FAKE_SCREENCAPTURE),
+                       ("osascript", _FAKE_OSASCRIPT)):
+        exe = bindir / name
+        exe.write_text(f"#!{sys.executable}\n{body}")
+        exe.chmod(exe.stat().st_mode | stat.S_IXUSR)
+    monkeypatch.setenv("APPSHOT_TEST_LOG", str(tmp_path / "capture.log"))
+    monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}{os.environ.get('PATH', '')}")
+    mod = _load_appshot()
+    monkeypatch.setattr(mod, "CAPTURE", str(bindir / "screencapture"))
+    return mod
+
+
+def test_appshot_fullscreen_capture(tmp_path, appshot, capsys):
     out_file = tmp_path / "shot.png"
-    rc, out, _ = run(AS, "--screen", "--out", str(out_file))
+    rc = appshot.main(["--screen", "--out", str(out_file)])
     assert rc == 0
     assert out_file.exists() and out_file.stat().st_size > 10000
     assert out_file.read_bytes()[:4] == b"\x89PNG"
+    log = tmp_path / "capture.log"
+    calls = [json.loads(l) for l in log.read_text().splitlines()]
+    assert calls == [["-x", str(out_file)]]
+    assert f"captured: {out_file}" in capsys.readouterr().out
 
 
-def test_appshot_list_windows():
-    rc, out, _ = run(AS, "--list", "--json")
+def test_appshot_list_windows(appshot, capsys):
+    rc = appshot.main(["--list", "--json"])
     assert rc == 0
-    windows = json.loads(out)["windows"]
+    windows = json.loads(capsys.readouterr().out)["windows"]
     assert isinstance(windows, list) and len(windows) > 0
     assert any("app" in w or "name" in w for w in windows)
+    assert windows[0] == {"app": "Finder", "info": "2 window(s)"}
 
 
-def test_appshot_missing_app(tmp_path):
-    rc, _, err = run(AS, "--app", "NonExistentApp12345XYZ", "--out",
-                     str(tmp_path / "x.png"))
+def test_appshot_missing_app(tmp_path, appshot, capsys):
+    rc = appshot.main(["--app", "NonExistentApp12345XYZ", "--out",
+                       str(tmp_path / "x.png")])
     assert rc == 1
+    err = capsys.readouterr().err
     assert "not found" in err.lower() or "no window" in err.lower()
+    assert not (tmp_path / "capture.log").exists()
+
+
+def test_appshot_non_macos_is_usage_error(tmp_path, monkeypatch, capsys):
+    mod = _load_appshot()
+    monkeypatch.setattr(mod, "CAPTURE", str(tmp_path / "no-screencapture"))
+    assert mod.main(["--screen", "--out", str(tmp_path / "x.png")]) == 2
+    assert "macos required" in capsys.readouterr().err.lower()
 
 
 # ── api-tester ────────────────────────────────────────────────────────────
