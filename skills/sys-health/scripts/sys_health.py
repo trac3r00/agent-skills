@@ -78,7 +78,10 @@ def _load() -> dict:
 
 
 def _top_processes(n: int) -> list[dict]:
-    p = subprocess.run(["ps", "-eo", "pid,pcpu,pmem,comm", "-r"],
+    # BSD/macOS `-r` sorts by CPU; procps on Linux reads `-r` as "running
+    # processes only" (often just ps itself), so sort explicitly there.
+    sort = ["--sort=-pcpu"] if sys.platform.startswith("linux") else ["-r"]
+    p = subprocess.run(["ps", "-eo", "pid,pcpu,pmem,comm", *sort],
                        capture_output=True, text=True)
     out = []
     for line in p.stdout.splitlines()[1 : n + 1]:
