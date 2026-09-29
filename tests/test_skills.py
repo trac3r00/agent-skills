@@ -1140,7 +1140,12 @@ def test_session_finder_groups_by_client():
     import subprocess as sp
     # Fixture agent: a process whose argv names a known client, so the scan
     # has a session to group on any host (CI runners have no live agents).
-    fake = sp.Popen([sys.executable, "-c", "import time; time.sleep(60)", "codex"],
+    # argv[0] is neutral so the interpreter path (e.g. a venv inside an
+    # "agent-skills" checkout, which the scanner excludes) cannot hide it; the
+    # trailing "codex" survives macOS framework stubs that re-exec with the
+    # real interpreter path as argv[0].
+    fake = sp.Popen(["codex", "-c", "import time; time.sleep(60)", "codex"],
+                    executable=sys.executable,
                     stdout=sp.DEVNULL, stderr=sp.DEVNULL)
     try:
         rc, out, _ = run(SF, "--json")
