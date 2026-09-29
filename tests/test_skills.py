@@ -1272,6 +1272,13 @@ def test_appshot_requires_macos(tmp_path):
     assert "macos required" in err.lower()
     assert not (tmp_path / "x.png").exists()
 
+    (tmp_path / "second").mkdir()
+    env, _ = _fake_macos_bins(tmp_path / "second")
+    env["APPSHOT_OSASCRIPT"] = str(tmp_path / "missing" / "osascript")
+    rc, _, err = _run_as(env, "--list", "--json")
+    assert rc == 2
+    assert "macos required" in err.lower() and "traceback" not in err.lower()
+
 
 # ── api-tester ────────────────────────────────────────────────────────────
 AT = ROOT / "skills" / "api-tester" / "scripts" / "api_tester.py"

@@ -27,6 +27,7 @@ import argparse
 import base64
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -102,6 +103,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if not Path(CAPTURE).exists():
         print("error: screencapture not found — macOS required", file=sys.stderr)
+        return 2
+    if not shutil.which(OSASCRIPT):
+        print("error: osascript not found — macOS required", file=sys.stderr)
         return 2
 
     if args.list:
