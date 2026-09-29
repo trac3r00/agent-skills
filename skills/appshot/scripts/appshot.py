@@ -15,6 +15,10 @@ Usage:
     appshot.py --screen --out -               # to stdout (base64)
 
 Exit codes: 0 captured, 1 app/window not found, 2 usage error or non-macOS.
+
+Platform boundary: the two macOS binaries are resolved from
+APPSHOT_SCREENCAPTURE / APPSHOT_OSASCRIPT when set (default: the system
+paths), so the CLI contract can be exercised with stand-in binaries off macOS.
 """
 
 from __future__ import annotations
@@ -22,11 +26,13 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-CAPTURE = "/usr/sbin/screencapture"
+CAPTURE = os.environ.get("APPSHOT_SCREENCAPTURE", "/usr/sbin/screencapture")
+OSASCRIPT = os.environ.get("APPSHOT_OSASCRIPT", "osascript")
 
 
 def list_windows() -> list[dict]:
@@ -46,7 +52,7 @@ def list_windows() -> list[dict]:
         '  return winList as string\n'
         'end tell'
     )
-    p = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+    p = subprocess.run([OSASCRIPT, "-e", script], capture_output=True, text=True)
     if p.returncode != 0:
         return []
     windows = []
@@ -59,7 +65,7 @@ def list_windows() -> list[dict]:
 
 def capture_app(app_name: str, out: str) -> tuple[bool, str]:
     activate = subprocess.run(
-        ["osascript", "-e", f'tell application "{app_name}" to activate'],
+        [OSASCRIPT, "-e", f'tell application "{app_name}" to activate'],
         capture_output=True, text=True)
     if activate.returncode != 0:
         return False, f"app not found: {app_name}"
@@ -67,7 +73,7 @@ def capture_app(app_name: str, out: str) -> tuple[bool, str]:
     time.sleep(0.5)
     cmd = [CAPTURE, "-l"]
     wid = subprocess.run(
-        ["osascript", "-e",
+        [OSASCRIPT, "-e",
          f'tell application "System Events" to tell process "{app_name}"\n'
          '  set frontWin to value of attribute "AXWindowNumber" of window 1\n'
          "  return frontWin\n"

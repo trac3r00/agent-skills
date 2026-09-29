@@ -44,7 +44,9 @@ EXCLUDE = re.compile(r"(session_finder|grep|agent-skills|pytest)", re.I)
 
 
 def detect(match_extra: str = "") -> list[dict]:
-    p = subprocess.run(["ps", "-eo", "pid,ppid,etime,command"],
+    # -ww: never truncate COMMAND (procps cuts it at 80 columns when it cannot
+    # size a terminal, hiding the client name); BSD and procps both accept it.
+    p = subprocess.run(["ps", "-ww", "-eo", "pid,ppid,etime,command"],
                        capture_output=True, text=True)
     sessions = []
     patterns = list(AGENT_PATTERNS)
