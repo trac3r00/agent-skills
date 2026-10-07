@@ -1137,11 +1137,28 @@ def test_session_finder_detects_known_process(tmp_path):
 
 
 def test_session_finder_groups_by_client():
-    rc, out, _ = run(SF, "--json")
-    assert rc == 0
-    data = json.loads(out)
-    assert "sessions" in data and "clients" in data
-    assert isinstance(data["sessions"], list)
+    import subprocess as sp
+    # Fixture agent: a process whose argv names a known client, so the scan
+    # has a session to group on any host (CI runners have no live agents).
+    # argv[0] is neutral so the interpreter path (e.g. a venv inside an
+    # "agent-skills" checkout, which the scanner excludes) cannot hide it; the
+    # trailing "codex" survives macOS framework stubs that re-exec with the
+    # real interpreter path as argv[0].
+    fake = sp.Popen(["codex", "-c", "import time; time.sleep(60)", "codex"],
+                    executable=sys.executable,
+                    stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+    try:
+        rc, out, _ = run(SF, "--json")
+        assert rc == 0
+        data = json.loads(out)
+        assert "sessions" in data and "clients" in data
+        assert isinstance(data["sessions"], list)
+        assert any(s["pid"] == fake.pid and s["client"] == "codex"
+                   for s in data["sessions"])
+        assert data["clients"]["codex"] >= 1
+    finally:
+        fake.terminate()
+        fake.wait()
 
 
 def test_session_finder_kill_refuses_non_agent(tmp_path):
@@ -1160,28 +1177,112 @@ def test_session_finder_kill_refuses_non_agent(tmp_path):
 # ── appshot ───────────────────────────────────────────────────────────────
 AS = ROOT / "skills" / "appshot" / "scripts" / "appshot.py"
 
+# Stand-ins for the macOS binaries behind appshot's platform boundary
+# (APPSHOT_SCREENCAPTURE / APPSHOT_OSASCRIPT): the CLI contract runs on any
+# OS and never captures the real screen.
+_FAKE_SCREENCAPTURE = '''\
+import random, struct, sys, zlib
+from pathlib import Path
+Path(sys.argv[0] + ".log").open("a").write(" ".join(sys.argv[1:]) + "\\n")
+rng = random.Random(0)
+w = h = 80
+raw = b"".join(b"\\x00" + bytes(rng.getrandbits(8) for _ in range(w * 3))
+               for _ in range(h))
+def chunk(t, d):
+    return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))
+png = (b"\\x89PNG\\r\\n\\x1a\\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+       + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+Path(sys.argv[-1]).write_bytes(png)
+'''
+_FAKE_OSASCRIPT = '''\
+import sys
+apps = ("Finder", "TextEdit")
+script = sys.argv[sys.argv.index("-e") + 1]
+if "every process whose visible" in script:
+    print("Finder :: 1 window(s)\\nTextEdit :: 2 window(s)")
+elif script.endswith(" to activate"):
+    app = script.split('"')[1]
+    if app not in apps:
+        sys.exit("execution error: Can't get application \\"%s\\". (-1728)" % app)
+elif "AXWindowNumber" in script:
+    print("4242")
+else:
+    sys.exit(1)
+'''
+
+
+def _fake_macos_bins(tmp_path):
+    import os as _os
+    bins = tmp_path / "bin"
+    bins.mkdir()
+    paths = {}
+    for env_key, name, body in (("APPSHOT_SCREENCAPTURE", "screencapture", _FAKE_SCREENCAPTURE),
+                                ("APPSHOT_OSASCRIPT", "osascript", _FAKE_OSASCRIPT)):
+        exe = bins / name
+        exe.write_text(f"#!{sys.executable}\n{body}")
+        exe.chmod(0o755)
+        paths[env_key] = str(exe)
+    return dict(_os.environ, **paths), bins / "screencapture.log"
+
+
+def _run_as(env, *args):
+    p = subprocess.run([sys.executable, str(AS), *args],
+                       capture_output=True, text=True, env=env)
+    return p.returncode, p.stdout, p.stderr
+
 
 def test_appshot_fullscreen_capture(tmp_path):
+    env, log = _fake_macos_bins(tmp_path)
     out_file = tmp_path / "shot.png"
-    rc, out, _ = run(AS, "--screen", "--out", str(out_file))
+    rc, out, _ = _run_as(env, "--screen", "--out", str(out_file))
     assert rc == 0
     assert out_file.exists() and out_file.stat().st_size > 10000
     assert out_file.read_bytes()[:4] == b"\x89PNG"
+    assert log.read_text().split() == ["-x", str(out_file)]
 
 
-def test_appshot_list_windows():
-    rc, out, _ = run(AS, "--list", "--json")
+def test_appshot_list_windows(tmp_path):
+    env, _ = _fake_macos_bins(tmp_path)
+    rc, out, _ = _run_as(env, "--list", "--json")
     assert rc == 0
     windows = json.loads(out)["windows"]
     assert isinstance(windows, list) and len(windows) > 0
     assert any("app" in w or "name" in w for w in windows)
+    assert {"app": "TextEdit", "info": "2 window(s)"} in windows
+
+
+def test_appshot_app_window_capture(tmp_path):
+    env, log = _fake_macos_bins(tmp_path)
+    out_file = tmp_path / "textedit.png"
+    rc, out, _ = _run_as(env, "--app", "TextEdit", "--out", str(out_file), "--json")
+    assert rc == 0
+    assert json.loads(out)["captured"] == str(out_file)
+    assert log.read_text().split() == ["-l", "4242", str(out_file)]
 
 
 def test_appshot_missing_app(tmp_path):
-    rc, _, err = run(AS, "--app", "NonExistentApp12345XYZ", "--out",
-                     str(tmp_path / "x.png"))
+    env, log = _fake_macos_bins(tmp_path)
+    rc, _, err = _run_as(env, "--app", "NonExistentApp12345XYZ", "--out",
+                         str(tmp_path / "x.png"))
     assert rc == 1
     assert "not found" in err.lower() or "no window" in err.lower()
+    assert not log.exists()
+
+
+def test_appshot_requires_macos(tmp_path):
+    env, _ = _fake_macos_bins(tmp_path)
+    env["APPSHOT_SCREENCAPTURE"] = str(tmp_path / "missing" / "screencapture")
+    rc, out, err = _run_as(env, "--screen", "--out", str(tmp_path / "x.png"))
+    assert rc == 2
+    assert "macos required" in err.lower()
+    assert not (tmp_path / "x.png").exists()
+
+    (tmp_path / "second").mkdir()
+    env, _ = _fake_macos_bins(tmp_path / "second")
+    env["APPSHOT_OSASCRIPT"] = str(tmp_path / "missing" / "osascript")
+    rc, _, err = _run_as(env, "--list", "--json")
+    assert rc == 2
+    assert "macos required" in err.lower() and "traceback" not in err.lower()
 
 
 # ── api-tester ────────────────────────────────────────────────────────────

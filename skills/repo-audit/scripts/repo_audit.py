@@ -76,7 +76,9 @@ def audit(repo: Path, stale_days: int, require: list[str]) -> dict:
         rc, ts = git(repo, "log", "-1", "--format=%cI", name)
         if rc != 0 or not ts:
             continue
-        last = datetime.fromisoformat(ts)
+        # %cI may end in "Z" (e.g. under TZ=UTC); fromisoformat accepts it
+        # only from Python 3.11, and the floor here is 3.9.
+        last = datetime.fromisoformat(ts.replace("Z", "+00:00"))
         if last < cutoff:
             branches.append({"name": name, "last_commit": ts})
     checks["stale_branches"] = {"status": "pass" if not branches else "warn",

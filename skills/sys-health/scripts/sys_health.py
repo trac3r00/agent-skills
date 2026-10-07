@@ -21,6 +21,9 @@ import json
 import subprocess
 import sys
 
+# macOS ships sysctl in /usr/sbin, which is often missing from agent PATHs.
+SYSCTL = "/usr/sbin/sysctl" if sys.platform == "darwin" else "sysctl"
+
 
 def _disk(path: str) -> dict:
     st = __import__("os").statvfs(path)
@@ -34,7 +37,7 @@ def _disk(path: str) -> dict:
 
 def _memory() -> dict:
     try:
-        p = subprocess.run(["sysctl", "-n", "hw.memsize"],
+        p = subprocess.run([SYSCTL, "-n", "hw.memsize"],
                            capture_output=True, text=True)
         total = int(p.stdout.strip())
         vm = subprocess.run(["vm_stat"], capture_output=True, text=True).stdout
@@ -65,7 +68,7 @@ def _memory() -> dict:
 
 def _load() -> dict:
     try:
-        p = subprocess.run(["sysctl", "-n", "vm.loadavg"],
+        p = subprocess.run([SYSCTL, "-n", "vm.loadavg"],
                            capture_output=True, text=True)
         parts = p.stdout.strip().strip("{}").split()
         return {"1m": float(parts[0]), "5m": float(parts[1]), "15m": float(parts[2])}
@@ -78,7 +81,10 @@ def _load() -> dict:
 
 
 def _top_processes(n: int) -> list[dict]:
-    p = subprocess.run(["ps", "-eo", "pid,pcpu,pmem,comm", "-r"],
+    # BSD ps (macOS) sorts by CPU with -r; procps (Linux) reads -r as
+    # "running only" and needs an explicit sort key instead.
+    sort = ["-r"] if sys.platform == "darwin" else ["--sort=-pcpu"]
+    p = subprocess.run(["ps", "-eo", "pid,pcpu,pmem,comm", *sort],
                        capture_output=True, text=True)
     out = []
     for line in p.stdout.splitlines()[1 : n + 1]:
